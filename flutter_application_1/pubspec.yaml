@@ -26,7 +26,10 @@ flutter:
 
   # Enable generation of localized Strings from arb files.
   generate: true
-
+  fonts:
+    - family: Modak
+      fonts: 
+        - asset: assets/fonts/Modak-Regular.ttf
   assets:
     # Add assets from the images directory to the application.
     - assets/images/
