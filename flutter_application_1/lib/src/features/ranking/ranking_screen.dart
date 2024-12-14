@@ -57,20 +57,108 @@ class RankingScreen extends StatelessWidget {
       backgroundColor: AppColors.branco,
       body: Column(
         children: [
-          Container(
-            width: double.infinity,
-            height: 100,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.azulEscuro,
-              borderRadius: BorderRadius.circular(12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Align(alignment: Alignment.centerLeft),
+                Text(
+                  'Grupo 2',
+                  style: TextStyle(
+                    color: AppColors.pretoClaro, 
+                    fontSize: 20, 
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8), 
+              ],
             ),
-            child: const Text(
-              'Grupo 2',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+            child: Container(
+              width: double.infinity,
+              height: 100,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.azulEscuro,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Row(
+                    children: [
+                      Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundImage: AssetImage('assets/images/RatoBrancoFundoAzul.png'),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: CircleAvatar(
+                              radius: 10,
+                              backgroundColor: AppColors.pretoClaro,
+                              child: Text(
+                                '1°',
+                                style: TextStyle(
+                                  color: AppColors.branco,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        'Ronaldo',
+                        style: TextStyle(
+                          color: AppColors.branco,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundImage: AssetImage('assets/images/teste.jpg'),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: CircleAvatar(
+                              radius: 10,
+                              backgroundColor: AppColors.pretoClaro,
+                              child: Text(
+                                '2°',
+                                style: TextStyle(
+                                  color: AppColors.branco,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        'Você',
+                        style: TextStyle(
+                          color: AppColors.branco,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
