@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../common/constants/app_colors.dart';
+import '../../common/widgets/custom_navigation_bar.dart';
 
 class RankingScreen extends StatelessWidget {
   const RankingScreen({super.key});
@@ -7,52 +8,17 @@ class RankingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.branco,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            decoration: const BoxDecoration(
-              color: AppColors.azulEscuro,
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              color: AppColors.branco,
-              onPressed: () {
-                Navigator.pop(context, '/home');
-              },
-            ),
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0, right: 0, top: 8.0, bottom: 8.0),
-            child: Container(
-              decoration: const BoxDecoration(
-                color: AppColors.azulEscuro,
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.person),
-                color: AppColors.branco,
-                onPressed: () {
-                  // Botao TelaPerfil
-                },
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 0, right: 8.0, top: 8.0, bottom: 8.0),
-            child: IconButton(
-              icon: const Icon(Icons.more_vert, size: 30),
-              color: AppColors.azulEscuro,
-              onPressed: () {
-                // Botao tela EditeUmGrupo
-              },
-            ),
-          ),
-        ],
+      appBar: CustomNavigationBar(
+        title: 'Ranking',
+        onBackButtonPressed: () {
+          Navigator.pop(context, '/home');
+        },
+        onProfileButtonPressed: () {
+          // Botao tela perfil
+        },
+        onMoreButtonPressed: () {
+          // Botao ? (mais)
+        },
       ),
       backgroundColor: AppColors.branco,
       body: Column(
