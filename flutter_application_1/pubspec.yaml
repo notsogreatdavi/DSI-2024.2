@@ -1,6 +1,7 @@
 name: flutter_application_1
 description: "A new Flutter project."
 
+
 # Prevent accidental publishing to pub.dev.
 publish_to: 'none'
 
@@ -12,14 +13,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_localizations:
-    sdk: flutter
+  supabase_flutter: ^2.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 flutter:
   uses-material-design: true
