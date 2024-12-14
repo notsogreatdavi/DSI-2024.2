@@ -20,7 +20,7 @@ class RankingScreen extends StatelessWidget {
               icon: const Icon(Icons.arrow_back),
               color: AppColors.branco,
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(context, '/home');
               },
             ),
           ),
@@ -60,143 +60,258 @@ class RankingScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
             child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Align(alignment: Alignment.centerLeft),
                 Text(
                   'Grupo 2',
                   style: TextStyle(
-                    color: AppColors.pretoClaro, 
-                    fontSize: 20, 
-                    fontWeight: FontWeight.bold,
+                    color: AppColors.pretoClaro,
+                    fontSize: 20,
+                    fontWeight: FontWeight.normal,
+                    fontFamily: 'Montserrat',
                   ),
                 ),
-                SizedBox(height: 8), 
+                SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  height: 100,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.azulEscuro,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Row(
+                        children: [
+                          Stack(
+                            children: [
+                              CircleAvatar(
+                                radius: 30,
+                                backgroundImage: AssetImage('assets/images/ronaldo_teste.jpg'),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: CircleAvatar(
+                                  radius: 10,
+                                  backgroundColor: AppColors.pretoClaro,
+                                  child: Text(
+                                    '1°',
+                                    style: TextStyle(
+                                      color: AppColors.branco,
+                                      fontSize: 12,
+                                      fontFamily: 'Montserrat',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            'Ronaldo',
+                            style: TextStyle(
+                              color: AppColors.branco,
+                              fontSize: 16,
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Stack(
+                            children: [
+                              CircleAvatar(
+                                radius: 30,
+                                backgroundImage: AssetImage('assets/images/teste.jpg'),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: CircleAvatar(
+                                  radius: 10,
+                                  backgroundColor: AppColors.pretoClaro,
+                                  child: Text(
+                                    '2°',
+                                    style: TextStyle(
+                                      color: AppColors.branco,
+                                      fontSize: 12,
+                                      fontFamily: 'Montserrat',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            'Você',
+                            style: TextStyle(
+                              color: AppColors.branco,
+                              fontSize: 16,
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-            child: Container(
-              width: double.infinity,
-              height: 100,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.azulEscuro,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Row(
-                    children: [
-                      Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 30,
-                            backgroundImage: AssetImage('assets/images/RatoBrancoFundoAzul.png'),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: CircleAvatar(
-                              radius: 10,
-                              backgroundColor: AppColors.pretoClaro,
-                              child: Text(
-                                '1°',
-                                style: TextStyle(
-                                  color: AppColors.branco,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(width: 10),
-                      Text(
-                        'Ronaldo',
-                        style: TextStyle(
-                          color: AppColors.branco,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 30,
-                            backgroundImage: AssetImage('assets/images/teste.jpg'),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: CircleAvatar(
-                              radius: 10,
-                              backgroundColor: AppColors.pretoClaro,
-                              child: Text(
-                                '2°',
-                                style: TextStyle(
-                                  color: AppColors.branco,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(width: 10),
-                      Text(
-                        'Você',
-                        style: TextStyle(
-                          color: AppColors.branco,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
           const SizedBox(height: 20),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.azulEscuro,
-              foregroundColor: AppColors.azulClaro1,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          const Text(
+            'Ranking',
+            style: TextStyle(
+              fontFamily: 'Montserrat-semibold',
+              fontSize: 24,
+              color: AppColors.pretoClaro,
             ),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Botão clicado!')),
-              );
-            },
-            child: const Text('Clique aqui'),
           ),
           const SizedBox(height: 20),
           Expanded(
-            child: ListView.builder(
-              itemCount: 10, // Número de itens no ranking
-              itemBuilder: (context, index) {
-                return Card(
+            child: Column(
+              children: [
+                Card(
                   margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: AppColors.azulEscuro,
-                      child: Text(
-                        '${index + 1}', // Número do ranking
-                        style: const TextStyle(color: Colors.white),
-                      ),
+                      backgroundImage: AssetImage('assets/images/ronaldo_teste.jpg'),
+                      radius: 30, // Aumenta o tamanho da imagem
                     ),
-                    title: Text('Jogador ${index + 1}'),
-                    subtitle: Text('Pontos: ${100 - index * 10}'), // Exemplo de pontos
-                    trailing: const Icon(Icons.star, color: AppColors.azulEscuro),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Ronaldo Agaraucho',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat-semibold',
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          '42 dias ativos',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ],
+                    ),
+                    trailing: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 17,
+                          backgroundColor: AppColors.azulEscuro,
+                        ),
+                        const Text(
+                          '1°', // Número do ranking
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontFamily: 'Montserrat-bold',
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              },
+                ),
+                Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: AssetImage('assets/images/teste.jpg'),
+                      radius: 30, // Aumenta o tamanho da imagem
+                    ),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Guilherme Leopardo',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat-semibold',
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          '25 dias ativos',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ],
+                    ),
+                    trailing: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 17,
+                          backgroundColor: AppColors.azulEscuro,
+                        ),
+                        const Text(
+                          '2°', // Número do ranking
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontFamily: 'Montserrat-bold',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: AssetImage('assets/images/RatoBrancoFundoAzul.png'),
+                      radius: 30, // Aumenta o tamanho da imagem
+                    ),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Davi Vivieira',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat-semibold',
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          '24 dias ativos',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ],
+                    ),
+                    trailing: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 17,
+                          backgroundColor: AppColors.azulEscuro,
+                        ),
+                        const Text(
+                          '3°', // Número do ranking
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontFamily: 'Montserrat-bold',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
