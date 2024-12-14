@@ -36,17 +36,6 @@ class HomeScreenState extends State<HomeScreen> {
       "atividades": ["Simulados", "Resolução de exercícios"],
       "diasAtivos": 30,
     },
-    {
-      "id": 3,
-      "nome": "Clube de Matemática",
-      "descricao":
-          "A matemática é desafiadora, mas juntos conseguimos superar qualquer equação! Junte-se ao nosso clube.",
-      "foto": "assets/images/teste.jpg",
-      "area": null, // Campo opcional
-      "alunos": ["Lucas", "Fernanda"],
-      "atividades": ["Aulas de cálculo", "Geometria prática"],
-      "diasAtivos": 15,
-    },
   ];
 
   List<Map<String, dynamic>> filteredGrupos = [];
@@ -205,14 +194,27 @@ class HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.azulEscuro,
-        shape: const CircleBorder(), // Garante o formato circular
-        onPressed: () {
-          Navigator.push(
+        shape: const CircleBorder(),
+        onPressed: () async {
+          // Aguarda o resultado da tela de registro
+          final novoGrupo = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const RegisterScreen()),
+            MaterialPageRoute(
+              builder: (context) => const RegisterScreen(),
+            ),
           );
+
+          if (novoGrupo != null) {
+            setState(() {
+              grupos.add(novoGrupo);
+              filteredGrupos = grupos; // Atualiza a lista filtrada
+            });
+          }
         },
-        child: const Icon(Icons.add),
+        child: const Icon(
+          Icons.add,
+          color: AppColors.branco,
+        ),
       ),
     );
   }
