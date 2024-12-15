@@ -1,9 +1,30 @@
 import 'package:flutter/material.dart';
 import '../../common/constants/app_colors.dart';
 import '../../common/widgets/custom_navigation_bar.dart';
+import '../../common/widgets/custom_bottom_navigation_bar.dart';
 
-class RankingScreen extends StatelessWidget {
+class RankingScreen extends StatefulWidget {
   const RankingScreen({super.key});
+
+  @override
+  RankingScreenState createState() => RankingScreenState();
+}
+
+class RankingScreenState extends State<RankingScreen> {
+  int _selectedIndex = 2; 
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+      if (index == 0) {
+        Navigator.pushNamed(context, '/pomodoro');
+      } else if (index == 1) {
+        Navigator.pushNamed(context, '/home');
+      } else if (index == 2) {
+        Navigator.pushNamed(context, '/ranking');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,14 +193,14 @@ class RankingScreen extends StatelessWidget {
                       alignment: Alignment.center,
                       children: [
                         CircleAvatar(
-                          radius: 17,
+                          radius: 17, // Aumenta o tamanho do círculo
                           backgroundColor: AppColors.azulEscuro,
                         ),
                         const Text(
                           '1°', // Número do ranking
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 14,
+                            fontSize: 12,
                             fontFamily: 'Montserrat-bold',
                           ),
                         ),
@@ -217,14 +238,14 @@ class RankingScreen extends StatelessWidget {
                       alignment: Alignment.center,
                       children: [
                         CircleAvatar(
-                          radius: 17,
+                          radius: 17, // Aumenta o tamanho do círculo
                           backgroundColor: AppColors.azulEscuro,
                         ),
                         const Text(
                           '2°', // Número do ranking
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 14,
+                            fontSize: 12,
                             fontFamily: 'Montserrat-bold',
                           ),
                         ),
@@ -262,14 +283,14 @@ class RankingScreen extends StatelessWidget {
                       alignment: Alignment.center,
                       children: [
                         CircleAvatar(
-                          radius: 17,
+                          radius: 17, // Aumenta o tamanho do círculo
                           backgroundColor: AppColors.azulEscuro,
                         ),
                         const Text(
                           '3°', // Número do ranking
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 14,
+                            fontSize: 12,
                             fontFamily: 'Montserrat-bold',
                           ),
                         ),
@@ -281,6 +302,10 @@ class RankingScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: CustomBottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
       ),
     );
   }
