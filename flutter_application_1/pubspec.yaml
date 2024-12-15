@@ -1,6 +1,7 @@
 name: flutter_application_1
 description: "A new Flutter project."
 
+
 # Prevent accidental publishing to pub.dev.
 publish_to: 'none'
 
@@ -12,14 +13,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_localizations:
-    sdk: flutter
+  supabase_flutter: ^2.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 flutter:
   uses-material-design: true
@@ -30,6 +30,18 @@ flutter:
     - family: Modak
       fonts: 
         - asset: assets/fonts/Modak-Regular.ttf
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/Montserrat-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Montserrat-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Montserrat-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Montserrat-Bold.ttf
+          weight: 700
   assets:
-    # Add assets from the images directory to the application.
-    - assets/images/
+    - assets/images/teste.jpg
+    - assets/images/livro_ativo.png
+    - assets/images/RatoBrancoFundoAzul.png
+    - assets/images/ronaldo_teste.jpg

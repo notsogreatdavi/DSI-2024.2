@@ -41,7 +41,9 @@ class OnboardingScreen extends StatelessWidget {
                 width: 170,
                 height: 40,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.laranja,
                   ),
@@ -59,7 +61,9 @@ class OnboardingScreen extends StatelessWidget {
                 width: 170,
                 height: 40,
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushReplacementNamed(context, '/cadastro');
+                  },
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: AppColors.laranja),
                   ),
