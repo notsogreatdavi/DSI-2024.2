@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/constants/app_colors.dart';
+import '../registers/register_class.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,7 +24,7 @@ class HomeScreenState extends State<HomeScreen> {
     _searchController.addListener(_filterGroups);
   }
 
-    // Busca as informações do usuário logado no Supabase
+  // Busca as informações do usuário logado no Supabase
   Future<void> _loadUsuario() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
@@ -56,7 +57,7 @@ class HomeScreenState extends State<HomeScreen> {
   void _filterGroups() {
     setState(() {
       filteredGrupos = grupos
-          .where((grupo) => grupo["name"]
+          .where((grupo) => grupo["nomeGroup"]
               .toLowerCase()
               .contains(_searchController.text.toLowerCase()))
           .toList();
@@ -154,6 +155,7 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 20),
+
           // Lista de grupos
           Expanded(
             child: grupos.isEmpty
@@ -163,9 +165,10 @@ class HomeScreenState extends State<HomeScreen> {
                     itemBuilder: (context, index) {
                       final grupo = filteredGrupos[index];
                       return CardModelo(
-                        titulo: grupo["name"] ?? "Sem título",
-                        descricao: grupo["descricao"] ?? "Sem descrição",
-                        participantes: 0, // Você pode substituir por um valor real
+                        titulo: grupo["nomeGroup"] ?? "Sem título",
+                        descricao: grupo["descricaoGroup"] ?? "Sem descrição",
+                        participantes:
+                            0, // Você pode substituir por um valor real
                         imagemUrl: grupo["fotoUrl"] ??
                             "assets/images/teste.jpg", // Usa imagem padrão se não houver
                         diasAtivos: grupo["diasAtivos"] ?? 0,
@@ -190,9 +193,23 @@ class HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.azulEscuro,
+        shape: const CircleBorder(),
+        // No FloatingActionButton, onde você chama a tela de registro:
         onPressed: () async {
-          // Lógica para adicionar novos grupos
+          final novoGrupo = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => RegisterClassScreen()),
+          );
+
+          // Verifica se o grupo retornado não é nulo
+          if (novoGrupo != null) {
+            setState(() {
+              grupos.add(novoGrupo); // Adiciona o novo grupo na lista
+              filteredGrupos = grupos; // Atualiza a lista filtrada
+            });
+          }
         },
+
         child: const Icon(
           Icons.add,
           color: AppColors.branco,
