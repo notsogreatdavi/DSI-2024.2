@@ -32,7 +32,7 @@ class RankingScreenState extends State<RankingScreen> {
       appBar: CustomNavigationBar(
         title: 'Ranking',
         onBackButtonPressed: () {
-          Navigator.pop(context, '/home');
+            Navigator.pushNamed(context, '/home');
         },
         onProfileButtonPressed: () {
           // Botao tela perfil
