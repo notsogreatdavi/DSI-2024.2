@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/constants/app_colors.dart';
-import '../registers/register_class.dart'; // Import da tela de cadastro
+import '../registers/register_class.dart';
+import '../registers/delete_group.dart';
+import '../registers/update_group.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,46 +14,52 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
-
-  // Dados dos grupos com os novos atributos
-  List<Map<String, dynamic>> grupos = [
-    {
-      "id": 1,
-      "nome": "Foco Universitário Avançado (FUA)",
-      "descricao":
-          "Aqui sabemos que a preparação é intensa! Por isso, nos reunimos para trocar dicas, revisar conteúdos e turbinar sua preparação para o vestibular.",
-      "foto": "assets/images/teste.jpg",
-      "area": "Educação",
-      "alunos": ["Ronaldo", "João", "Ana"],
-      "atividades": ["Revisão ENEM", "Dicas de estudo"],
-      "diasAtivos": 42,
-    },
-    {
-      "id": 2,
-      "nome": "Grupo de Estudos ENEM",
-      "descricao":
-          "Discussões e estratégias voltadas para a aprovação no ENEM. Participe para compartilhar conhecimento e aprender mais!",
-      "foto": "assets/images/teste.jpg",
-      "area": "Exatas",
-      "alunos": ["Carlos", "Maria"],
-      "atividades": ["Simulados", "Resolução de exercícios"],
-      "diasAtivos": 30,
-    },
-  ];
-
+  List<Map<String, dynamic>> grupos = []; // Lista para os dados do Supabase
   List<Map<String, dynamic>> filteredGrupos = [];
+  Map<String, dynamic>? usuario; // Armazena os dados do usuário logado
 
   @override
   void initState() {
     super.initState();
-    filteredGrupos = grupos; // Inicializa com todos os grupos
+    _loadUsuario(); // Chama função para carregar usuário
+    _loadGrupos(); // Chama função para carregar grupos
     _searchController.addListener(_filterGroups);
+  }
+
+  // Busca as informações do usuário logado no Supabase
+  Future<void> _loadUsuario() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      final response = await Supabase.instance.client
+          .from('usuarios')
+          .select('nome, ativo') // Busca a coluna 'nome' e 'ativo'
+          .eq('id', user.id)
+          .single();
+
+      setState(() {
+        usuario = response;
+      });
+    }
+  }
+
+  // Função para buscar os grupos no Supabase
+  Future<void> _loadGrupos() async {
+    final response = await Supabase.instance.client
+        .from('grupo') // Nome da tabela
+        .select();
+
+    if (response.isNotEmpty) {
+      setState(() {
+        grupos = List<Map<String, dynamic>>.from(response);
+        filteredGrupos = grupos; // Inicializa a lista filtrada
+      });
+    }
   }
 
   void _filterGroups() {
     setState(() {
       filteredGrupos = grupos
-          .where((grupo) => grupo["nome"]
+          .where((grupo) => grupo["nomeGroup"]
               .toLowerCase()
               .contains(_searchController.text.toLowerCase()))
           .toList();
@@ -74,27 +83,24 @@ class HomeScreenState extends State<HomeScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ImagePage()),
-                );
-              },
-              child: const CircleAvatar(
-                backgroundImage: NetworkImage(
-                  'assets/images/teste.jpg',
-                ),
-                radius: 18,
-              ),
+            const CircleAvatar(
+              backgroundImage: AssetImage('assets/images/teste.jpg'),
+              radius: 18,
             ),
             const SizedBox(width: 5),
             IconButton(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                final isUpdated = await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const MenuPage()),
+                  MaterialPageRoute(
+                    builder: (context) => DeleteClassScreen(),
+                  ),
                 );
+
+                if (isUpdated == true) {
+                  // Recarrega os grupos se houve alteração
+                  _loadGrupos();
+                }
               },
               icon: const Icon(Icons.more_horiz, color: Colors.black),
             ),
@@ -113,39 +119,40 @@ class HomeScreenState extends State<HomeScreen> {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 10),
-          Container(
-            alignment: Alignment.center,
-            height: 60,
-            margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 5),
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-            decoration: BoxDecoration(
-              color: AppColors.azulEscuro,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  backgroundImage: NetworkImage(
-                    'assets/images/teste.jpg',
-                  ),
-                  radius: 40,
-                ),
-                SizedBox(width: 10),
-                Text(
-                  "Ronaldo | 42 dias ativos",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontFamily: "Montserrat",
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 20),
+
+          // Card com as informações do usuário logado
+          if (usuario != null)
+            Container(
+              alignment: Alignment.center,
+              height: 60,
+              margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 5),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+              decoration: BoxDecoration(
+                color: AppColors.azulEscuro,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const CircleAvatar(
+                    backgroundImage: AssetImage('assets/images/teste.jpg'),
+                    radius: 25,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    "${usuario!['nome']} | ${usuario!['ativo'] ?? 0} dias ativos",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontFamily: "Montserrat",
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Barra de pesquisa
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -162,55 +169,86 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 20),
+
+          // Lista de grupos
           Expanded(
-            child: ListView.builder(
-              itemCount: filteredGrupos.length,
-              itemBuilder: (context, index) {
-                final grupo = filteredGrupos[index];
-                return CardModelo(
-                  titulo: grupo["nome"],
-                  descricao: grupo["descricao"],
-                  participantes: grupo["alunos"].length,
-                  imagemUrl: grupo["foto"],
-                  diasAtivos: grupo["diasAtivos"],
-                  tituloStyle: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.yellow,
+            child: grupos.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    itemCount: filteredGrupos.length,
+                    itemBuilder: (context, index) {
+                      final grupo = filteredGrupos[index];
+                      return GestureDetector(
+                        onTap: () async {
+                          // Navega para a tela de edição, passando os dados do grupo
+                          final editedGroup = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  EditGroupScreen(grupo: grupo),
+                            ),
+                          );
+
+                          // Se um grupo atualizado foi retornado, atualize a lista
+                          if (editedGroup != null) {
+                            setState(() {
+                              final index = grupos.indexWhere(
+                                  (g) => g['id'] == editedGroup['id']);
+                              if (index != -1) {
+                                grupos[index] =
+                                    editedGroup; // Atualiza o grupo na lista principal
+                              }
+                              filteredGrupos =
+                                  grupos; // Atualiza a lista filtrada
+                            });
+                          }
+                        },
+                        child: CardModelo(
+                          titulo: grupo["nomeGroup"] ?? "Sem título",
+                          descricao: grupo["descricaoGroup"] ?? "Sem descrição",
+                          participantes: 0, // Substitua por valor real
+                          imagemUrl:
+                              grupo["fotoUrl"] ?? "assets/images/teste.jpg",
+                          diasAtivos: grupo["diasAtivos"] ?? 0,
+                          tituloStyle: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.yellow,
+                          ),
+                          descricaoStyle: const TextStyle(
+                            fontSize: 8,
+                            color: Colors.white,
+                          ),
+                          participantesStyle: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.white,
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                  descricaoStyle: const TextStyle(
-                    fontSize: 8,
-                    color: Colors.white,
-                  ),
-                  participantesStyle: const TextStyle(
-                    fontSize: 10,
-                    color: Colors.white,
-                  ),
-                );
-              },
-            ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.azulEscuro,
         shape: const CircleBorder(),
+        // No FloatingActionButton, onde você chama a tela de registro:
         onPressed: () async {
-          // Aguarda o resultado da tela de registro
           final novoGrupo = await Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const RegisterScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => RegisterClassScreen()),
           );
 
+          // Verifica se o grupo retornado não é nulo
           if (novoGrupo != null) {
             setState(() {
-              grupos.add(novoGrupo);
+              grupos.add(novoGrupo); // Adiciona o novo grupo na lista
               filteredGrupos = grupos; // Atualiza a lista filtrada
             });
           }
         },
+
         child: const Icon(
           Icons.add,
           color: AppColors.branco,
@@ -220,6 +258,7 @@ class HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// Modelo do Card reutilizável
 class CardModelo extends StatelessWidget {
   final String titulo;
   final String descricao;
@@ -264,7 +303,7 @@ class CardModelo extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.asset(
+            child: Image.network(
               imagemUrl,
               height: 120,
               width: 120,
@@ -289,13 +328,13 @@ class CardModelo extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.branco,
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
                           const Icon(Icons.local_fire_department,
-                              size: 16, color: AppColors.laranja),
+                              size: 16, color: Colors.orange),
                           const SizedBox(width: 4),
                           Text(
                             "$diasAtivos d",
@@ -327,40 +366,6 @@ class CardModelo extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class ImagePage extends StatelessWidget {
-  const ImagePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Página de Imagem"),
-        backgroundColor: Colors.indigo,
-      ),
-      body: const Center(
-        child: Text("Esta é a página de imagem."),
-      ),
-    );
-  }
-}
-
-class MenuPage extends StatelessWidget {
-  const MenuPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Página do Menu"),
-        backgroundColor: Colors.indigo,
-      ),
-      body: const Center(
-        child: Text("Esta é a página do menu."),
       ),
     );
   }

@@ -20,6 +20,7 @@ class App extends StatelessWidget {
         '/cadastro': (context) => CadastroPage(),
         '/home': (context) => const HomeScreen(),
         '/ranking': (context) => const RankingScreen(),
+
       }
     );
   }

@@ -1,144 +1,194 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../common/constants/app_colors.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
-
+class RegisterClassScreen extends StatefulWidget {
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  RegisterClassScreenState createState() => RegisterClassScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
-  final _formKey = GlobalKey<FormState>();
+class RegisterClassScreenState extends State<RegisterClassScreen> {
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _descricaoController = TextEditingController();
   final TextEditingController _areaController = TextEditingController();
-  final TextEditingController _alunosController = TextEditingController();
   final TextEditingController _atividadesController = TextEditingController();
-  final TextEditingController _diasAtivosController = TextEditingController();
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      // Cria o novo grupo
-      final novoGrupo = {
-        "id": DateTime.now().millisecondsSinceEpoch, // ID único
-        "nome": _nomeController.text,
-        "descricao": _descricaoController.text,
-        "area": _areaController.text,
-        "foto": "assets/images/teste.jpg", // Placeholder para a imagem
-        "alunos": _alunosController.text.split(','),
-        "atividades": _atividadesController.text.split(','),
-        "diasAtivos": int.tryParse(_diasAtivosController.text) ?? 0,
-      };
+  final SupabaseClient _supabase = Supabase.instance.client;
 
-      // Retorna o novo grupo para a HomeScreen
-      Navigator.pop(context, novoGrupo);
+  // Função para registrar o grupo
+  Future<void> _registrarGrupo() async {
+    final nome = _nomeController.text.trim();
+    final descricao = _descricaoController.text.trim();
+    final area = _areaController.text.trim();
+    final atividades = _atividadesController.text.trim();
+
+    if (nome.isEmpty || descricao.isEmpty || area.isEmpty) {
+      _showMessage('Por favor, preencha todos os campos obrigatórios!');
+      return;
     }
+
+    try {
+      // Insere o grupo no banco de dados
+      await _supabase
+          .from('grupo')
+          .insert({
+            'nomeGroup': nome,
+            'descricaoGroup': descricao,
+            'areaGroup': area,
+            'atividades': atividades.isNotEmpty ? atividades.split(',') : [],
+            'fotoUrl': 'assets/images/teste.jpg', // Imagem padrão
+          })
+          .select()
+          .single();
+
+      // Se o grupo for registrado com sucesso, retorna os dados para a tela anterior
+      if (mounted) {
+        _showMessage('Grupo cadastrado com sucesso! 🎉');
+        Navigator.pop(context, {
+          'nomeGroup': nome,
+          'descricaoGroup': descricao,
+          'areaGroup': area,
+          'atividades': atividades.isNotEmpty ? atividades.split(',') : [],
+          'fotoUrl': 'assets/images/teste.jpg',
+          'diasAtivos': 0, // Pode ser alterado conforme a lógica do seu app
+        });
+      } else {
+        if (mounted) {
+          _showMessage('Erro ao cadastrar o grupo.');
+        }
+      }
+    } catch (error) {
+      _showMessage('Erro inesperado: $error');
+    }
+  }
+
+  // Função para exibir mensagens
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Cadastro de Turma"),
-        backgroundColor: Colors.indigo,
+        title: Text(
+          'Cadastro de Grupo',
+          style: TextStyle(fontFamily: 'Montserrat'),
+        ),
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              const Text(
-                "Adicionar novo grupo",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+        child: ListView(
+          children: [
+            // Campo para o nome do grupo
+            TextField(
+              controller: _nomeController,
+              decoration: InputDecoration(
+                labelText: 'Nome do Grupo',
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _nomeController,
-                decoration: const InputDecoration(
-                  labelText: "Nome do grupo",
-                  border: OutlineInputBorder(),
+            ),
+            SizedBox(height: 16),
+
+            // Campo para a descrição do grupo
+            TextField(
+              controller: _descricaoController,
+              decoration: InputDecoration(
+                labelText: 'Descrição',
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "Por favor, insira o nome do grupo.";
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _descricaoController,
-                decoration: const InputDecoration(
-                  labelText: "Descrição",
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "Por favor, insira uma descrição.";
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _areaController,
-                decoration: const InputDecoration(
-                  labelText: "Área",
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "Por favor, insira a área do grupo.";
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _alunosController,
-                decoration: const InputDecoration(
-                  labelText: "Alunos (separados por vírgula)",
-                  border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _atividadesController,
-                decoration: const InputDecoration(
-                  labelText: "Atividades (separadas por vírgula)",
-                  border: OutlineInputBorder(),
+              maxLines: 3,
+            ),
+            SizedBox(height: 16),
+
+            // Campo para a área do grupo
+            TextField(
+              controller: _areaController,
+              decoration: InputDecoration(
+                labelText: 'Área',
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _diasAtivosController,
-                decoration: const InputDecoration(
-                  labelText: "Dias ativos",
-                  border: OutlineInputBorder(),
+            ),
+            SizedBox(height: 16),
+
+            // Campo para as atividades do grupo
+            TextField(
+              controller: _atividadesController,
+              decoration: InputDecoration(
+                labelText: 'Atividades (separadas por vírgula)',
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "Por favor, insira a quantidade de dias ativos.";
-                  }
-                  if (int.tryParse(value) == null) {
-                    return "Insira um número válido.";
-                  }
-                  return null;
-                },
+                focusedBorder: OutlineInputBorder(
+                  borderSide:
+                      BorderSide(color: Colors.blue, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _submitForm,
-                child: const Text("Salvar"),
+            ),
+            SizedBox(height: 24),
+
+            // Botão para registrar o grupo
+            Center(
+              child: SizedBox(
+                width: 180, // Define a largura fixa do botão
+                height: 30, // Define a altura fixa do botão
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.laranja,
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(30), // Arredondando o botão
+                      side: BorderSide(
+                          color: AppColors.azulEscuro,
+                          width: 2), // Borda do botão
+                    ),
+                  ),
+                  onPressed: _registrarGrupo,
+                  child: Text(
+                    'Registrar Grupo',
+                    style: TextStyle(
+                        color: AppColors.branco,
+                        fontFamily: 'Montserrat',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

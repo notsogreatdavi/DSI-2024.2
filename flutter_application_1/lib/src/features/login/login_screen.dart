@@ -23,6 +23,7 @@ class _LoginPageState extends State<LoginPage> {
       if (response.session != null) {
         // Login bem-sucedido: redirecionar para a tela de ranking
         Navigator.pushReplacementNamed(context, '/home');
+
       } else {
         _showMessage('Erro ao realizar login: ${response.error?.message}');
       }
