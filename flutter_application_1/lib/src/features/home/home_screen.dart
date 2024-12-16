@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/constants/app_colors.dart';
 import '../registers/register_class.dart';
+import '../registers/delete_group.dart';
+import '../registers/update_group.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -87,7 +89,14 @@ class HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 5),
             IconButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DeleteClassScreen(),
+                  ),
+                );
+              },
               icon: const Icon(Icons.more_horiz, color: Colors.black),
             ),
           ],
@@ -164,26 +173,51 @@ class HomeScreenState extends State<HomeScreen> {
                     itemCount: filteredGrupos.length,
                     itemBuilder: (context, index) {
                       final grupo = filteredGrupos[index];
-                      return CardModelo(
-                        titulo: grupo["nomeGroup"] ?? "Sem título",
-                        descricao: grupo["descricaoGroup"] ?? "Sem descrição",
-                        participantes:
-                            0, // Você pode substituir por um valor real
-                        imagemUrl: grupo["fotoUrl"] ??
-                            "assets/images/teste.jpg", // Usa imagem padrão se não houver
-                        diasAtivos: grupo["diasAtivos"] ?? 0,
-                        tituloStyle: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.yellow,
-                        ),
-                        descricaoStyle: const TextStyle(
-                          fontSize: 8,
-                          color: Colors.white,
-                        ),
-                        participantesStyle: const TextStyle(
-                          fontSize: 10,
-                          color: Colors.white,
+                      return GestureDetector(
+                        onTap: () async {
+                          // Navega para a tela de edição, passando os dados do grupo
+                          final editedGroup = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  EditGroupScreen(grupo: grupo),
+                            ),
+                          );
+
+                          // Se um grupo atualizado foi retornado, atualize a lista
+                          if (editedGroup != null) {
+                            setState(() {
+                              final index = grupos.indexWhere(
+                                  (g) => g['id'] == editedGroup['id']);
+                              if (index != -1) {
+                                grupos[index] =
+                                    editedGroup; // Atualiza o grupo na lista principal
+                              }
+                              filteredGrupos =
+                                  grupos; // Atualiza a lista filtrada
+                            });
+                          }
+                        },
+                        child: CardModelo(
+                          titulo: grupo["nomeGroup"] ?? "Sem título",
+                          descricao: grupo["descricaoGroup"] ?? "Sem descrição",
+                          participantes: 0, // Substitua por valor real
+                          imagemUrl:
+                              grupo["fotoUrl"] ?? "assets/images/teste.jpg",
+                          diasAtivos: grupo["diasAtivos"] ?? 0,
+                          tituloStyle: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.yellow,
+                          ),
+                          descricaoStyle: const TextStyle(
+                            fontSize: 8,
+                            color: Colors.white,
+                          ),
+                          participantesStyle: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.white,
+                          ),
                         ),
                       );
                     },

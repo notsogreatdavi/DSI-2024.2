@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../common/constants/app_colors.dart';
 
 class RegisterClassScreen extends StatefulWidget {
   @override
@@ -28,7 +29,7 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
 
     try {
       // Insere o grupo no banco de dados
-      final response = await _supabase
+      await _supabase
           .from('grupo')
           .insert({
             'nomeGroup': nome,
@@ -41,18 +42,16 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
           .single();
 
       // Se o grupo for registrado com sucesso, retorna os dados para a tela anterior
-      if (response != null) {
-        if (mounted) {
-          _showMessage('Grupo cadastrado com sucesso! 🎉');
-          Navigator.pop(context, {
-            'nomeGroup': nome,
-            'descricaoGroup': descricao,
-            'areaGroup': area,
-            'atividades': atividades.isNotEmpty ? atividades.split(',') : [],
-            'fotoUrl': 'assets/images/teste.jpg',
-            'diasAtivos': 0, // Pode ser alterado conforme a lógica do seu app
-          });
-        }
+      if (mounted) {
+        _showMessage('Grupo cadastrado com sucesso! 🎉');
+        Navigator.pop(context, {
+          'nomeGroup': nome,
+          'descricaoGroup': descricao,
+          'areaGroup': area,
+          'atividades': atividades.isNotEmpty ? atividades.split(',') : [],
+          'fotoUrl': 'assets/images/teste.jpg',
+          'diasAtivos': 0, // Pode ser alterado conforme a lógica do seu app
+        });
       } else {
         if (mounted) {
           _showMessage('Erro ao cadastrar o grupo.');
@@ -74,7 +73,10 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cadastro de Grupo'),
+        title: Text(
+          'Cadastro de Grupo',
+          style: TextStyle(fontFamily: 'Montserrat'),
+        ),
         centerTitle: true,
       ),
       body: Padding(
@@ -86,7 +88,16 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
               controller: _nomeController,
               decoration: InputDecoration(
                 labelText: 'Nome do Grupo',
-                border: OutlineInputBorder(),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ),
             SizedBox(height: 16),
@@ -96,7 +107,16 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
               controller: _descricaoController,
               decoration: InputDecoration(
                 labelText: 'Descrição',
-                border: OutlineInputBorder(),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
               maxLines: 3,
             ),
@@ -107,7 +127,16 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
               controller: _areaController,
               decoration: InputDecoration(
                 labelText: 'Área',
-                border: OutlineInputBorder(),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ),
             SizedBox(height: 16),
@@ -117,7 +146,16 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
               controller: _atividadesController,
               decoration: InputDecoration(
                 labelText: 'Atividades (separadas por vírgula)',
-                border: OutlineInputBorder(),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide:
+                      BorderSide(color: Colors.blue, width: 2), // Borda azul
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ),
             SizedBox(height: 24),
@@ -125,10 +163,23 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
             // Botão para registrar o grupo
             ElevatedButton(
               style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.laranja,
                 padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(30), // Arredondando o botão
+                ),
+                minimumSize: Size(180, 30), // Limita o tamanho do botão
               ),
               onPressed: _registrarGrupo,
-              child: Text('Registrar Grupo'),
+              child: Text(
+                'Registrar Grupo',
+                style: TextStyle(
+                    color: AppColors.branco,
+                    fontFamily: 'Montserrat',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),
