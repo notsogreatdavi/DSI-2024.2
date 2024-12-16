@@ -10,4 +10,6 @@ class AppColors {
   static const Color amarelo = Color(0xFFFCE762);
   static const Color laranja = Color(0xFFF09623);
   static const Color branco = Color(0xFFF0ECEC);
+  static const Color cinzaClaro = Color(0xFFD9D9D9);
+  static const Color pretoClaro = Color(0xFF25291C);
 }

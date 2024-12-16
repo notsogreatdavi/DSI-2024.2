@@ -41,5 +41,7 @@ flutter:
         - asset: assets/fonts/Montserrat-Bold.ttf
           weight: 700
   assets:
-    # Add assets from the images directory to the application.
-    - assets/images/
+    - assets/images/teste.jpg
+    - assets/images/livro_ativo.png
+    - assets/images/RatoBrancoFundoAzul.png
+    - assets/images/ronaldo_teste.jpg

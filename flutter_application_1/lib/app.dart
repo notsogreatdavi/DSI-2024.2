@@ -12,13 +12,16 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: '/tela_login',
+      initialRoute: '/',
       routes: {
-        '/tela_login': (context) => LoginPage(),
-        '/tela_ranking': (context) => RankingScreen(key: GlobalKey()),
-        '/tela_cadastro': (context) => CadastroPage(),
-        '/tela_home': (context) => HomeScreen(),
-        }
-       );
+        '/': (context) => const SplashScreen(),
+        '/onboarding': (context) => const OnboardingScreen(),
+        '/login': (context) => LoginPage(),
+        '/cadastro': (context) => CadastroPage(),
+        '/home': (context) => const HomeScreen(),
+        '/ranking': (context) => const RankingScreen(),
+
       }
+    );
   }
+}
