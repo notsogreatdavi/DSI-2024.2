@@ -161,24 +161,31 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
             SizedBox(height: 24),
 
             // Botão para registrar o grupo
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.laranja,
-                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(30), // Arredondando o botão
+            Center(
+              child: SizedBox(
+                width: 180, // Define a largura fixa do botão
+                height: 30, // Define a altura fixa do botão
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.laranja,
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(30), // Arredondando o botão
+                      side: BorderSide(
+                          color: AppColors.azulEscuro,
+                          width: 2), // Borda do botão
+                    ),
+                  ),
+                  onPressed: _registrarGrupo,
+                  child: Text(
+                    'Registrar Grupo',
+                    style: TextStyle(
+                        color: AppColors.branco,
+                        fontFamily: 'Montserrat',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600),
+                  ),
                 ),
-                minimumSize: Size(180, 30), // Limita o tamanho do botão
-              ),
-              onPressed: _registrarGrupo,
-              child: Text(
-                'Registrar Grupo',
-                style: TextStyle(
-                    color: AppColors.branco,
-                    fontFamily: 'Montserrat',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600),
               ),
             ),
           ],

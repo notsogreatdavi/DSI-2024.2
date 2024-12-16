@@ -89,13 +89,18 @@ class HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 5),
             IconButton(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                final isUpdated = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => DeleteClassScreen(),
                   ),
                 );
+
+                if (isUpdated == true) {
+                  // Recarrega os grupos se houve alteração
+                  _loadGrupos();
+                }
               },
               icon: const Icon(Icons.more_horiz, color: Colors.black),
             ),

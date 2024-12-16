@@ -31,7 +31,8 @@ class _DeleteClassScreenState extends State<DeleteClassScreen> {
     try {
       await _supabase.from('grupo').delete().match({'id': id});
       _showMessage('Grupo deletado com sucesso! 🎉');
-      _loadGrupos(); // Recarrega a lista após a exclusão
+      Navigator.pop(context,
+          true); // Retorna à tela anterior informando que houve alteração
     } catch (e) {
       _showMessage('Erro ao deletar o grupo: $e');
     }
