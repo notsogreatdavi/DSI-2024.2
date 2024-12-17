@@ -76,7 +76,7 @@ class RankingScreenState extends State<RankingScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 30,
-                                backgroundImage: AssetImage('assets/images/ronaldo_teste.jpg'),
+                                backgroundImage: AssetImage('assets/images/gato_rosa.jpg'),
                               ),
                               Positioned(
                                 bottom: 0,
@@ -167,14 +167,14 @@ class RankingScreenState extends State<RankingScreen> {
                   margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: AssetImage('assets/images/ronaldo_teste.jpg'),
+                      backgroundImage: AssetImage('assets/images/gato_rosa.jpg'),
                       radius: 30, // Aumenta o tamanho da imagem
                     ),
                     title: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Ronaldo Agaraucho',
+                          'Ronaldo Ribeiro',
                           style: TextStyle(
                             fontFamily: 'Montserrat-semibold',
                           ),
@@ -219,7 +219,7 @@ class RankingScreenState extends State<RankingScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Guilherme Leopardo',
+                          'Guilherme Leonardo',
                           style: TextStyle(
                             fontFamily: 'Montserrat-semibold',
                           ),
@@ -257,14 +257,14 @@ class RankingScreenState extends State<RankingScreen> {
                   margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: AssetImage('assets/images/RatoBrancoFundoAzul.png'),
+                      backgroundImage: AssetImage('assets/images/gato_real.jpg'),
                       radius: 30, // Aumenta o tamanho da imagem
                     ),
                     title: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Davi Vivieira',
+                          'Davi Vieira',
                           style: TextStyle(
                             fontFamily: 'Montserrat-semibold',
                           ),
