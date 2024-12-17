@@ -29,32 +29,24 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
 
     try {
       // Insere o grupo no banco de dados
-      await _supabase
+      final response = await _supabase
           .from('grupo')
           .insert({
             'nomeGroup': nome,
             'descricaoGroup': descricao,
             'areaGroup': area,
             'atividades': atividades.isNotEmpty ? atividades.split(',') : [],
-            'fotoUrl': 'assets/images/teste.jpg', // Imagem padrão
           })
           .select()
           .single();
 
-      // Se o grupo for registrado com sucesso, retorna os dados para a tela anterior
-      if (mounted) {
+      if (response != null) {
         _showMessage('Grupo cadastrado com sucesso! 🎉');
-        Navigator.pop(context, {
-          'nomeGroup': nome,
-          'descricaoGroup': descricao,
-          'areaGroup': area,
-          'atividades': atividades.isNotEmpty ? atividades.split(',') : [],
-          'fotoUrl': 'assets/images/teste.jpg',
-          'diasAtivos': 0, // Pode ser alterado conforme a lógica do seu app
-        });
-      } else {
+
+        // Volta para a tela anterior (home) com um sinal para recarregar os dados
         if (mounted) {
-          _showMessage('Erro ao cadastrar o grupo.');
+          Navigator.pop(
+              context, true); // Passa 'true' como flag para recarregar
         }
       }
     } catch (error) {

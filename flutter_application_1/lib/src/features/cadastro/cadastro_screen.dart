@@ -39,7 +39,7 @@ class _CadastroPageState extends State<CadastroPage> {
         });
 
         _showMessage('Cadastro realizado com sucesso! 🎉');
-        Navigator.pushReplacementNamed(context, '/tela_login');
+        Navigator.pushReplacementNamed(context, '/login');
       } else {
         _showMessage('Erro no cadastro: ${response.error?.message}');
       }
@@ -105,8 +105,7 @@ class _CadastroPageState extends State<CadastroPage> {
   }
 }
 
-OutlineInputOutline() {
-}
+OutlineInputOutline() {}
 
 extension on AuthResponse {
   get error => null;
