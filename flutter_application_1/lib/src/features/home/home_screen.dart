@@ -207,8 +207,8 @@ class HomeScreenState extends State<HomeScreen> {
                           titulo: grupo["nomeGroup"] ?? "Sem título",
                           descricao: grupo["descricaoGroup"] ?? "Sem descrição",
                           participantes: 0, // Substitua por valor real
-                          imagemUrl:
-                              grupo["fotoUrl"] ?? "assets/images/teste.jpg",
+                          imagemUrl: grupo["fotoUrl"] ??
+                              "https://i.im.ge/2024/12/17/zATt3f.teste.jpeg",
                           diasAtivos: grupo["diasAtivos"] ?? 0,
                           tituloStyle: const TextStyle(
                             fontSize: 13,
