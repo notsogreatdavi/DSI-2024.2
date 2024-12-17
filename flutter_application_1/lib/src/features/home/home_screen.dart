@@ -233,22 +233,22 @@ class HomeScreenState extends State<HomeScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.azulEscuro,
         shape: const CircleBorder(),
-        // No FloatingActionButton, onde você chama a tela de registro:
         onPressed: () async {
+          // Aguarda a criação do grupo e recebe o grupo como retorno
           final novoGrupo = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => RegisterClassScreen()),
           );
 
-          // Verifica se o grupo retornado não é nulo
+          // Verifica se um novo grupo foi retornado
           if (novoGrupo != null) {
+            // Recarrega todos os grupos do banco para refletir o novo grupo
+            await _loadGrupos();
             setState(() {
-              grupos.add(novoGrupo); // Adiciona o novo grupo na lista
-              filteredGrupos = grupos; // Atualiza a lista filtrada
+              filteredGrupos = grupos; // Atualiza a lista exibida
             });
           }
         },
-
         child: const Icon(
           Icons.add,
           color: AppColors.branco,
