@@ -5,7 +5,7 @@ import '../../common/constants/app_colors.dart';
 class EditGroupScreen extends StatefulWidget {
   final Map<String, dynamic> grupo; // Recebe os dados do grupo selecionado
 
-  EditGroupScreen({required this.grupo});
+  const EditGroupScreen({super.key, required this.grupo});
 
   @override
   State<EditGroupScreen> createState() => _EditGroupScreenState();
