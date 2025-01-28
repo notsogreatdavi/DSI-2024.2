@@ -13,15 +13,26 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       initialRoute: '/',
+      onGenerateRoute: (settings) {
+        if (settings.name == '/ranking') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) {
+              return RankingScreen(grupo: args['grupo']);
+            },
+          );
+        }
+        // Adicione outras rotas dinâmicas aqui, se necessário
+        return null;
+      },
       routes: {
         '/': (context) => const SplashScreen(),
         '/onboarding': (context) => const OnboardingScreen(),
         '/login': (context) => LoginPage(),
         '/cadastro': (context) => CadastroPage(),
         '/home': (context) => const HomeScreen(),
-        '/ranking': (context) => const RankingScreen(),
-
-      }
+        // Remova a rota estática '/ranking'
+      },
     );
   }
 }
