@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../common/constants/app_colors.dart';
 import '../../common/widgets/custom_navigation_bar.dart';
 import '../../common/widgets/custom_bottom_navigation_bar.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../registers/update_group.dart';
 
 class RankingScreen extends StatefulWidget {
   final Map<String, dynamic> grupo; // Recebe os dados do grupo selecionado
@@ -16,45 +14,12 @@ class RankingScreen extends StatefulWidget {
 
 class RankingScreenState extends State<RankingScreen> {
   int _selectedIndex = 2;
-  List<Map<String, dynamic>> grupos = [];
-  List<Map<String, dynamic>> filteredGrupos = [];
-  final TextEditingController _searchController = TextEditingController();
+  late Map<String, dynamic> grupo;
 
   @override
   void initState() {
     super.initState();
-    _loadGrupos();
-    _searchController.addListener(_filterGroups);
-  }
-
-  Future<void> _loadGrupos() async {
-    final response = await Supabase.instance.client
-        .from('grupo')
-        .select();
-
-    if (response.isNotEmpty) {
-      setState(() {
-        grupos = List<Map<String, dynamic>>.from(response);
-        filteredGrupos = grupos;
-      });
-    }
-  }
-
-  void _filterGroups() {
-    setState(() {
-      filteredGrupos = grupos
-          .where((grupo) => grupo["nomeGroup"]
-              .toLowerCase()
-              .contains(_searchController.text.toLowerCase()))
-          .toList();
-    });
-  }
-
-  @override
-  void dispose() {
-    _searchController.removeListener(_filterGroups);
-    _searchController.dispose();
-    super.dispose();
+    grupo = widget.grupo;
   }
 
   void _onItemTapped(int index) {
@@ -63,17 +28,15 @@ class RankingScreenState extends State<RankingScreen> {
       if (index == 0) {
         Navigator.pushNamed(context, '/pomodoro');
       } else if (index == 1) {
-        Navigator.pushNamed(context, '/home');
+        Navigator.pushNamed(context, '/activities', arguments: {'grupo': grupo});
       } else if (index == 2) {
-        Navigator.pushNamed(context, '/ranking');
+        // não faz nada pq já está na tela de ranking	
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final grupo = widget.grupo; // Recebe o grupo passado pela HomeScreen
-
     return Scaffold(
       appBar: CustomNavigationBar(
         title: 'Ranking',
@@ -84,15 +47,16 @@ class RankingScreenState extends State<RankingScreen> {
           // Botao tela perfil
         },
         onMoreButtonPressed: () async {
-          final isUpdated = await Navigator.push(
+          final updatedGroup = await Navigator.pushNamed(
             context,
-            MaterialPageRoute(
-              builder: (context) => EditGroupScreen(grupo: grupo),
-            ),
+            '/update_group',
+            arguments: {'grupo': grupo},
           );
 
-          if (isUpdated == true) {
-            _loadGrupos();
+          if (updatedGroup != null) {
+            setState(() {
+              grupo = updatedGroup as Map<String, dynamic>;
+            });
           }
         },
       ),
@@ -361,141 +325,6 @@ class RankingScreenState extends State<RankingScreen> {
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-      ),
-    );
-  }
-}
-
-class EditGroupScreen extends StatefulWidget {
-  final Map<String, dynamic> grupo; // Recebe os dados do grupo selecionado
-
-  const EditGroupScreen({super.key, required this.grupo});
-
-  @override
-  State<EditGroupScreen> createState() => _EditGroupScreenState();
-}
-
-class _EditGroupScreenState extends State<EditGroupScreen> {
-  final SupabaseClient _supabase = Supabase.instance.client;
-
-  late TextEditingController _nomeController;
-  late TextEditingController _descricaoController;
-  late TextEditingController _areaController;
-  late TextEditingController _atividadesController;
-
-  @override
-  void initState() {
-    super.initState();
-    // Inicializa os controladores com os dados do grupo selecionado
-    _nomeController =
-        TextEditingController(text: widget.grupo['nomeGroup'] ?? '');
-    _descricaoController =
-        TextEditingController(text: widget.grupo['descricaoGroup'] ?? '');
-    _areaController =
-        TextEditingController(text: widget.grupo['areaGroup'] ?? '');
-    _atividadesController = TextEditingController(
-        text: (widget.grupo['atividades'] as List<dynamic>?)?.join(',') ?? '');
-  }
-
-  // Função para atualizar o grupo no banco de dados
-  Future<void> _editarGrupo() async {
-    final nome = _nomeController.text.trim();
-    final descricao = _descricaoController.text.trim();
-    final area = _areaController.text.trim();
-    final atividades = _atividadesController.text.trim();
-
-    if (nome.isEmpty || descricao.isEmpty || area.isEmpty) {
-      _showMessage('Por favor, preencha todos os campos obrigatórios!');
-      return;
-    }
-
-    try {
-      final response = await _supabase.from('grupo').update({
-        'nomeGroup': nome,
-        'descricaoGroup': descricao,
-        'areaGroup': area,
-        'atividades': atividades.isNotEmpty ? atividades.split(',') : [],
-      }).match({'id': widget.grupo['id']}).select();
-
-      if (response.isNotEmpty) {
-        _showMessage('Grupo atualizado com sucesso! 🎉');
-        Navigator.pop(context, response.first);
-      } else {
-        _showMessage('Erro ao atualizar o grupo: Nenhum dado retornado!');
-      }
-    } catch (e) {
-      _showMessage('Erro ao editar o grupo: $e');
-    }
-  }
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Editar Grupo'),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: [
-            TextField(
-              controller: _nomeController,
-              decoration: InputDecoration(
-                labelText: 'Nome do Grupo',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _descricaoController,
-              decoration: InputDecoration(
-                labelText: 'Descrição',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _areaController,
-              decoration: InputDecoration(
-                labelText: 'Área',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _atividadesController,
-              decoration: InputDecoration(
-                labelText: 'Atividades (separadas por vírgula)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.laranja,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              onPressed: _editarGrupo,
-              child: const Text(
-                'Salvar Alterações',
-                style:
-                    TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

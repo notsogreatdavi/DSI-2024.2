@@ -3,8 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/constants/app_colors.dart';
 import '../registers/register_class.dart';
 import '../registers/delete_group.dart';
-import '../registers/update_group.dart';
-import '../ranking/ranking_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -181,10 +179,10 @@ class HomeScreenState extends State<HomeScreen> {
                       final grupo = filteredGrupos[index];
                       return GestureDetector(
                         onTap: () {
-                          // Navega para a tela de ranking, passando os dados do grupo
+                          // Navega para a tela de atividades, passando os dados do grupo
                           Navigator.pushNamed(
                             context,
-                            '/ranking',
+                            '/activities',
                             arguments: {'grupo': grupo},
                           );
                         },
