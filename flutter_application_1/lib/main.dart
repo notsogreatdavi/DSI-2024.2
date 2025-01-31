@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
  import 'dart:io';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  HttpOverrides.global = new MyHttpOverrides();
+  HttpOverrides.global = MyHttpOverrides();
 
 
   await Supabase.initialize(

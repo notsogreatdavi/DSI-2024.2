@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/constants/app_colors.dart';
 import '../registers/register_class.dart';
 import '../registers/delete_group.dart';
-import '../registers/update_group.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -126,7 +125,7 @@ class HomeScreenState extends State<HomeScreen> {
             Container(
               alignment: Alignment.center,
               height: 60,
-              margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 5),
+              margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 25),
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
               decoration: BoxDecoration(
                 color: AppColors.azulEscuro,
@@ -179,29 +178,13 @@ class HomeScreenState extends State<HomeScreen> {
                     itemBuilder: (context, index) {
                       final grupo = filteredGrupos[index];
                       return GestureDetector(
-                        onTap: () async {
-                          // Navega para a tela de edição, passando os dados do grupo
-                          final editedGroup = await Navigator.push(
+                        onTap: () {
+                          // Navega para a tela de atividades, passando os dados do grupo
+                          Navigator.pushNamed(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  EditGroupScreen(grupo: grupo),
-                            ),
+                            '/activities',
+                            arguments: {'grupo': grupo},
                           );
-
-                          // Se um grupo atualizado foi retornado, atualize a lista
-                          if (editedGroup != null) {
-                            setState(() {
-                              final index = grupos.indexWhere(
-                                  (g) => g['id'] == editedGroup['id']);
-                              if (index != -1) {
-                                grupos[index] =
-                                    editedGroup; // Atualiza o grupo na lista principal
-                              }
-                              filteredGrupos =
-                                  grupos; // Atualiza a lista filtrada
-                            });
-                          }
                         },
                         child: CardModelo(
                           titulo: grupo["nomeGroup"] ?? "Sem título",

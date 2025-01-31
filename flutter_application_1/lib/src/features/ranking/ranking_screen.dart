@@ -4,14 +4,23 @@ import '../../common/widgets/custom_navigation_bar.dart';
 import '../../common/widgets/custom_bottom_navigation_bar.dart';
 
 class RankingScreen extends StatefulWidget {
-  const RankingScreen({super.key});
+  final Map<String, dynamic> grupo; // Recebe os dados do grupo selecionado
+
+  const RankingScreen({super.key, required this.grupo});
 
   @override
   RankingScreenState createState() => RankingScreenState();
 }
 
 class RankingScreenState extends State<RankingScreen> {
-  int _selectedIndex = 2; 
+  int _selectedIndex = 2;
+  late Map<String, dynamic> grupo;
+
+  @override
+  void initState() {
+    super.initState();
+    grupo = widget.grupo;
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -19,9 +28,9 @@ class RankingScreenState extends State<RankingScreen> {
       if (index == 0) {
         Navigator.pushNamed(context, '/pomodoro');
       } else if (index == 1) {
-        Navigator.pushNamed(context, '/home');
+        Navigator.pushNamed(context, '/activities', arguments: {'grupo': grupo});
       } else if (index == 2) {
-        Navigator.pushNamed(context, '/ranking');
+        // não faz nada pq já está na tela de ranking	
       }
     });
   }
@@ -32,13 +41,23 @@ class RankingScreenState extends State<RankingScreen> {
       appBar: CustomNavigationBar(
         title: 'Ranking',
         onBackButtonPressed: () {
-            Navigator.pushNamed(context, '/home');
+          Navigator.pushNamed(context, '/home');
         },
         onProfileButtonPressed: () {
           // Botao tela perfil
         },
-        onMoreButtonPressed: () {
-          // Botao ? (mais)
+        onMoreButtonPressed: () async {
+          final updatedGroup = await Navigator.pushNamed(
+            context,
+            '/update_group',
+            arguments: {'grupo': grupo},
+          );
+
+          if (updatedGroup != null) {
+            setState(() {
+              grupo = updatedGroup as Map<String, dynamic>;
+            });
+          }
         },
       ),
       backgroundColor: AppColors.branco,
@@ -50,7 +69,7 @@ class RankingScreenState extends State<RankingScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Grupo 2',
+                  grupo['nomeGroup'] ?? 'Sem título',
                   style: TextStyle(
                     color: AppColors.pretoClaro,
                     fontSize: 20,

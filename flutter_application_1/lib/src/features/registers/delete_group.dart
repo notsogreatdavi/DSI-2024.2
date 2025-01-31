@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 //import '../../common/constants/app_colors.dart';
 
 class DeleteClassScreen extends StatefulWidget {
+  const DeleteClassScreen({super.key});
+
   @override
   State<DeleteClassScreen> createState() => _DeleteClassScreenState();
 }

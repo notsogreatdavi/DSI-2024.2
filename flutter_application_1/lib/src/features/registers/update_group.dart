@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/constants/app_colors.dart';
 
-class EditGroupScreen extends StatefulWidget {
+class UpdateGroupScreen extends StatefulWidget {
   final Map<String, dynamic> grupo; // Recebe os dados do grupo selecionado
 
-  EditGroupScreen({required this.grupo});
+  const UpdateGroupScreen({super.key, required this.grupo});
 
   @override
-  State<EditGroupScreen> createState() => _EditGroupScreenState();
+  State<UpdateGroupScreen> createState() => _UpdateGroupScreenState();
 }
 
-class _EditGroupScreenState extends State<EditGroupScreen> {
+class _UpdateGroupScreenState extends State<UpdateGroupScreen> {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   late TextEditingController _nomeController;
@@ -46,7 +46,6 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
     }
 
     try {
-      // print('Atualizando o grupo no banco...');
       final response = await _supabase.from('grupo').update({
         'nomeGroup': nome,
         'descricaoGroup': descricao,
@@ -54,18 +53,13 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
         'atividades': atividades.isNotEmpty ? atividades.split(',') : [],
       }).match({'id': widget.grupo['id']}).select();
 
-      // print('Resposta do banco: $response');
-
       if (response.isNotEmpty) {
-        // print('Grupo atualizado com sucesso!');
         _showMessage('Grupo atualizado com sucesso! 🎉');
         Navigator.pop(context, response.first);
       } else {
-        // print('Nenhum dado retornado pelo banco.');
         _showMessage('Erro ao atualizar o grupo: Nenhum dado retornado!');
       }
     } catch (e) {
-      // print('Erro ao editar o grupo: $e');
       _showMessage('Erro ao editar o grupo: $e');
     }
   }

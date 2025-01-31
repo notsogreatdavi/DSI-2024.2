@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/constants/app_colors.dart';
 
 class RegisterClassScreen extends StatefulWidget {
+  const RegisterClassScreen({super.key});
+
   @override
   RegisterClassScreenState createState() => RegisterClassScreenState();
 }
@@ -40,16 +42,14 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
           .select()
           .single();
 
-      if (response != null) {
-        _showMessage('Grupo cadastrado com sucesso! 🎉');
+      _showMessage('Grupo cadastrado com sucesso! 🎉');
 
-        // Volta para a tela anterior (home) com um sinal para recarregar os dados
-        if (mounted) {
-          Navigator.pop(
-              context, true); // Passa 'true' como flag para recarregar
-        }
+      // Volta para a tela anterior (home) com um sinal para recarregar os dados
+      if (mounted) {
+        Navigator.pop(
+            context, true); // Passa 'true' como flag para recarregar
       }
-    } catch (error) {
+        } catch (error) {
       _showMessage('Erro inesperado: $error');
     }
   }
