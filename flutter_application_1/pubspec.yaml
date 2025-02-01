@@ -13,6 +13,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  image_picker: ^1.0.7
+  image_picker_web: ^4.0.0
   supabase_flutter: ^2.0.0
 
 dev_dependencies:
