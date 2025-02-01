@@ -55,6 +55,16 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Função para contar a quantidade de usuários em cada grupo
+  Future<int> _countParticipantes(int grupoId) async {
+    final response = await Supabase.instance.client
+        .from('grupo_usuarios')
+        .select('usuario_id')
+        .eq('grupo_id', grupoId);
+
+    return response.length;
+  }
+
   void _filterGroups() {
     setState(() {
       filteredGrupos = grupos
@@ -177,36 +187,45 @@ class HomeScreenState extends State<HomeScreen> {
                     itemCount: filteredGrupos.length,
                     itemBuilder: (context, index) {
                       final grupo = filteredGrupos[index];
-                      return GestureDetector(
-                        onTap: () {
-                          // Navega para a tela de atividades, passando os dados do grupo
-                          Navigator.pushNamed(
-                            context,
-                            '/activities',
-                            arguments: {'grupo': grupo},
+                      return FutureBuilder<int>(
+                        future: _countParticipantes(grupo['id']),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final participantes = snapshot.data ?? 0;
+                          return GestureDetector(
+                            onTap: () {
+                              // Navega para a tela de atividades, passando os dados do grupo
+                              Navigator.pushNamed(
+                                context,
+                                '/activities',
+                                arguments: {'grupo': grupo},
+                              );
+                            },
+                            child: CardModelo(
+                              titulo: grupo["nomeGroup"] ?? "Sem título",
+                              descricao: grupo["descricaoGroup"] ?? "Sem descrição",
+                              participantes: participantes,
+                              imagemUrl: grupo["fotoUrl"] ??
+                                  "https://i.im.ge/2024/12/17/zATt3f.teste.jpeg",
+                              diasAtivos: grupo["diasAtivos"] ?? 0,
+                              tituloStyle: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.yellow,
+                              ),
+                              descricaoStyle: const TextStyle(
+                                fontSize: 8,
+                                color: Colors.white,
+                              ),
+                              participantesStyle: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.white,
+                              ),
+                            ),
                           );
                         },
-                        child: CardModelo(
-                          titulo: grupo["nomeGroup"] ?? "Sem título",
-                          descricao: grupo["descricaoGroup"] ?? "Sem descrição",
-                          participantes: 0, // Substitua por valor real
-                          imagemUrl: grupo["fotoUrl"] ??
-                              "https://i.im.ge/2024/12/17/zATt3f.teste.jpeg",
-                          diasAtivos: grupo["diasAtivos"] ?? 0,
-                          tituloStyle: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.yellow,
-                          ),
-                          descricaoStyle: const TextStyle(
-                            fontSize: 8,
-                            color: Colors.white,
-                          ),
-                          participantesStyle: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.white,
-                          ),
-                        ),
                       );
                     },
                   ),
