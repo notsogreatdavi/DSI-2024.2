@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/constants/app_colors.dart';
 import '../../common/widgets/custom_navigation_bar.dart';
@@ -22,6 +23,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
   Map<String, dynamic>? topUser;
   Map<String, dynamic>? loggedInUser;
   int? loggedInUserRank;
+  String filtro = '';
 
   @override
   void initState() {
@@ -38,9 +40,10 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     });
 
     try {
+      // Faz join com a tabela usuarios para obter o campo fotoUrlPerfil
       final List<dynamic> response = await Supabase.instance.client
           .from('atividade')
-          .select()
+          .select('*, usuarios!inner(fotoUrlPerfil)')
           .eq('grupo_id', grupo['id']);
 
       setState(() {
@@ -60,38 +63,36 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
       final supabase = Supabase.instance.client;
       final userId = supabase.auth.currentUser?.id ?? '';
 
-      // Consulta única para buscar todos os usuários do grupo com os dados da tabela "usuarios"
+      // Consulta para buscar todos os usuários do grupo utilizando a coluna sequencia
       final List<dynamic> allUsersResponse = await supabase
           .from('grupo_usuarios')
-          .select('usuario_id, usuarios!inner(fotoUrlPerfil, ativo, nome)')
+          .select('usuario_id, sequencia, usuarios!inner(fotoUrlPerfil, nome)')
           .eq('grupo_id', grupo['id']);
 
-      // Converte para List<Map<String, dynamic>> e ordena localmente com base em usuarios.ativo de forma decrescente
       List<Map<String, dynamic>> allUsers =
           List<Map<String, dynamic>>.from(allUsersResponse);
+      // Ordena os usuários de forma decrescente: quanto maior a sequencia, maior a posição
       allUsers.sort((a, b) {
-        final int aAtivo = a['usuarios']['ativo'] is int
-            ? a['usuarios']['ativo']
-            : int.tryParse(a['usuarios']['ativo'].toString()) ?? 0;
-        final int bAtivo = b['usuarios']['ativo'] is int
-            ? b['usuarios']['ativo']
-            : int.tryParse(b['usuarios']['ativo'].toString()) ?? 0;
-        return bAtivo.compareTo(aAtivo);
+        final int aSequencia = a['sequencia'] is int
+            ? a['sequencia']
+            : int.tryParse(a['sequencia'].toString()) ?? 0;
+        final int bSequencia = b['sequencia'] is int
+            ? b['sequencia']
+            : int.tryParse(b['sequencia'].toString()) ?? 0;
+        return bSequencia.compareTo(aSequencia);
       });
 
-      // Define o topUser como o primeiro elemento, se existir
       final Map<String, dynamic>? topUserFromQuery =
           allUsers.isNotEmpty ? allUsers.first : null;
 
-      // Consulta para buscar o usuário logado (mesmo que já possa ser filtrado da lista acima)
-      final Map<String, dynamic> loggedInUserResponse = await supabase
+      // Consulta para buscar o usuário logado utilizando a coluna sequencia
+      final Map<String, dynamic>? loggedInUserResponse = await supabase
           .from('grupo_usuarios')
-          .select('usuario_id, usuarios!inner(fotoUrlPerfil, ativo, nome)')
+          .select('usuario_id, sequencia, usuarios!inner(fotoUrlPerfil, nome)')
           .eq('grupo_id', grupo['id'])
           .eq('usuario_id', userId)
-          .single();
+          .maybeSingle();
 
-      // Calcula a posição (rank) do usuário logado na lista ordenada
       final int userRank =
           allUsers.indexWhere((user) => user['usuario_id'] == userId) + 1;
 
@@ -118,11 +119,148 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     });
   }
 
+  /// Retorna o cabeçalho para o grupo de atividades com base na data
+  String _getHeader(String dateKey) {
+    DateTime date = DateTime.parse(dateKey);
+    DateTime today = DateTime.now();
+    DateTime yesterday = today.subtract(const Duration(days: 1));
+
+    if (date.year == today.year &&
+        date.month == today.month &&
+        date.day == today.day) {
+      return "Hoje";
+    } else if (date.year == yesterday.year &&
+        date.month == yesterday.month &&
+        date.day == yesterday.day) {
+      return "Ontem";
+    } else {
+      return DateFormat('EEEE, MMM, d', 'pt_BR').format(date);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Filtra as atividades pelo título, se houver filtro
+    final filteredAtividades = atividades.where((atividade) {
+      if (filtro.isEmpty) return true;
+      return atividade['titulo_ativi']
+          .toString()
+          .toLowerCase()
+          .contains(filtro.toLowerCase());
+    }).toList();
+
+    // Agrupa as atividades pela data (considerando apenas o ano, mês e dia)
+    final Map<String, List<Map<String, dynamic>>> gruposAtividades = {};
+    for (var atividade in filteredAtividades) {
+      DateTime createdAt = DateTime.parse(atividade['created_at']);
+      String dateKey = DateFormat('yyyy-MM-dd').format(createdAt);
+
+      if (!gruposAtividades.containsKey(dateKey)) {
+        gruposAtividades[dateKey] = [];
+      }
+      gruposAtividades[dateKey]!.add(atividade);
+    }
+
+    // Ordena as atividades dentro de cada grupo (do mais recente para o mais antigo)
+    for (var grupo in gruposAtividades.values) {
+      grupo.sort((a, b) {
+        DateTime aDate = DateTime.parse(a['created_at']);
+        DateTime bDate = DateTime.parse(b['created_at']);
+        return bDate.compareTo(aDate);
+      });
+    }
+
+    // Ordena as datas (grupos) de forma decrescente: o grupo mais recente primeiro
+    final sortedDateKeys = gruposAtividades.keys.toList()
+      ..sort((a, b) {
+        return DateTime.parse(b).compareTo(DateTime.parse(a));
+      });
+
+    // Cria uma lista de widgets para exibir cada grupo (com cabeçalho e atividades)
+    List<Widget> activityWidgets = [];
+    for (String dateKey in sortedDateKeys) {
+      activityWidgets.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Center(
+            child: Text(
+              _getHeader(dateKey),
+              style: const TextStyle(
+                fontFamily: 'Montserrat-semibold',
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.pretoClaro,
+              ),
+            ),
+          ),
+        ),
+      );
+      for (var atividade in gruposAtividades[dateKey]!) {
+        activityWidgets.add(
+          Card(
+            color: AppColors.azulEscuro,
+            margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            child: ListTile(
+              // Exibe a imagem da atividade e, sobreposta, a foto do usuário (da tabela usuarios)
+              leading: atividade['fotoUrlAtivi'] != null
+                  ? Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 25,
+                          backgroundImage:
+                              NetworkImage(atividade['fotoUrlAtivi']),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: CircleAvatar(
+                            radius: 10,
+                            backgroundImage: atividade['usuarios'] != null &&
+                                    atividade['usuarios']['fotoUrlPerfil'] != null
+                                ? NetworkImage(atividade['usuarios']
+                                    ['fotoUrlPerfil'])
+                                : null,
+                            backgroundColor: AppColors.branco,
+                          ),
+                        ),
+                      ],
+                    )
+                  : null,
+              title: Text(
+                atividade['titulo_ativi'] ?? 'Sem título',
+                style: const TextStyle(
+                  fontFamily: 'Montserrat-semibold',
+                  fontSize: 18,
+                  color: AppColors.branco,
+                ),
+              ),
+              subtitle: Text(
+                atividade['descricao_ativi'] ?? 'Sem descrição',
+                style: const TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 14,
+                  color: AppColors.branco,
+                ),
+              ),
+              trailing: Text(
+                DateFormat("HH'h'mm").format(
+                  DateTime.parse(atividade['created_at']),
+                ),
+                style: const TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 12,
+                  color: AppColors.branco,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
     return Scaffold(
       appBar: CustomNavigationBar(
-        title: 'Atividades',
+        title: '',
         onBackButtonPressed: () {
           Navigator.pushNamed(context, '/home');
         },
@@ -132,7 +270,6 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
             '/update_group',
             arguments: {'grupo': grupo},
           );
-
           if (updatedGroup != null) {
             setState(() {
               grupo = updatedGroup as Map<String, dynamic>;
@@ -243,8 +380,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                                       ),
                                       const SizedBox(width: 10),
                                       Text(
-                                        topUser!['usuarios']['nome'] ??
-                                            'Usuário',
+                                        topUser!['usuarios']['nome'] ?? 'Usuário',
                                         style: TextStyle(
                                           color: AppColors.branco,
                                           fontSize: 16,
@@ -268,8 +404,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                                             right: 0,
                                             child: CircleAvatar(
                                               radius: 10,
-                                              backgroundColor:
-                                                  AppColors.pretoClaro,
+                                              backgroundColor: AppColors.pretoClaro,
                                               child: Text(
                                                 '${loggedInUserRank}°',
                                                 style: const TextStyle(
@@ -296,56 +431,32 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                                 ],
                               ),
                             ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            decoration: InputDecoration(
+                              fillColor: AppColors.cinzaClaro,
+                              filled: true,
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide.none,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              prefixIcon: Icon(Icons.search),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                filtro = value;
+                              });
+                            },
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Atividades',
-                      style: TextStyle(
-                        fontFamily: 'Montserrat-semibold',
-                        fontSize: 24,
-                        color: AppColors.pretoClaro,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
                     Expanded(
-                      child: atividades.isEmpty
+                      child: filteredAtividades.isEmpty
                           ? const Center(
                               child: Text('Nenhuma atividade encontrada'))
-                          : ListView.builder(
-                              itemCount: atividades.length,
-                              itemBuilder: (context, index) {
-                                final atividade = atividades[index];
-                                return Card(
-                                  margin: const EdgeInsets.all(8.0),
-                                  child: ListTile(
-                                    leading: atividade['fotoUrlAtivi'] != null
-                                        ? Image.network(
-                                            atividade['fotoUrlAtivi'],
-                                            width: 50,
-                                            height: 50,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : null,
-                                    title: Text(
-                                      atividade['titulo_ativi'] ?? 'Sem título',
-                                      style: const TextStyle(
-                                        fontFamily: 'Montserrat-semibold',
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      atividade['descricao_ativi'] ??
-                                          'Sem descrição',
-                                      style: const TextStyle(
-                                        fontFamily: 'Montserrat',
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
+                          : ListView(
+                              children: activityWidgets,
                             ),
                     ),
                   ],
@@ -359,7 +470,6 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
             '/register_activity',
             arguments: {'grupoId': grupo['id']},
           );
-
           if (novaAtividade != null) {
             await _loadAtividades();
           }
