@@ -158,21 +158,68 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
               child: Column(
                 children: [
                   if (_imagemSelecionada != null)
-                    Image.memory(_imagemSelecionada!,
-                        height: 100, fit: BoxFit.cover),
+                    Image.memory(
+                      _imagemSelecionada!,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
                   SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: _selecionarImagem,
-                    child: Text('Selecionar Imagem'),
+                  SizedBox(
+                    width: 200,
+                    height: 30,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.laranja,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          side: BorderSide(
+                            color: AppColors.azulEscuro,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      onPressed: _selecionarImagem,
+                      child: Text(
+                        'Selecionar Imagem',
+                        style: TextStyle(
+                          color: AppColors.branco,
+                          fontFamily: 'Montserrat',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
             SizedBox(height: 16),
             Center(
-              child: ElevatedButton(
-                onPressed: _registrarGrupo,
-                child: Text('Registrar Grupo'),
+              child: SizedBox(
+                width: 200,
+                height: 30,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.laranja,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      side: BorderSide(
+                        color: AppColors.azulEscuro,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  onPressed: _registrarGrupo,
+                  child: Text(
+                    'Registrar Grupo',
+                    style: TextStyle(
+                      color: AppColors.branco,
+                      fontFamily: 'Montserrat',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
