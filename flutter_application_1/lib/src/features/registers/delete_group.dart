@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-//import '../../common/constants/app_colors.dart';
 
 class DeleteClassScreen extends StatefulWidget {
   const DeleteClassScreen({super.key});
@@ -31,10 +30,14 @@ class _DeleteClassScreenState extends State<DeleteClassScreen> {
   // Função para deletar o grupo selecionado
   Future<void> _deleteGrupo(int id) async {
     try {
+      // Remove as referências na tabela grupo_usuarios
+      await _supabase.from('grupo_usuarios').delete().match({'grupo_id': id});
+
+      // Remove o grupo na tabela grupo
       await _supabase.from('grupo').delete().match({'id': id});
+
       _showMessage('Grupo deletado com sucesso! 🎉');
-      Navigator.pop(context,
-          true); // Retorna à tela anterior informando que houve alteração
+      Navigator.pop(context, true); // Retorna à tela anterior informando que houve alteração
     } catch (e) {
       _showMessage('Erro ao deletar o grupo: $e');
     }
@@ -64,8 +67,7 @@ class _DeleteClassScreenState extends State<DeleteClassScreen> {
               itemBuilder: (context, index) {
                 final grupo = grupos[index];
                 return Card(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: ListTile(
                     title: Text(grupo['nomeGroup'] ?? 'Sem nome'),
                     subtitle: Text(grupo['descricaoGroup'] ?? 'Sem descrição'),

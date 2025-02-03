@@ -42,14 +42,24 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
           .select()
           .single();
 
+      final grupoId = response['id'];
+      final userId = _supabase.auth.currentUser?.id;
+
+      if (userId != null) {
+        // Associa o usuário logado ao grupo recém-criado
+        await _supabase.from('grupo_usuarios').insert({
+          'grupo_id': grupoId,
+          'usuario_id': userId,
+        });
+      }
+
       _showMessage('Grupo cadastrado com sucesso! 🎉');
 
       // Volta para a tela anterior (home) com um sinal para recarregar os dados
       if (mounted) {
-        Navigator.pop(
-            context, true); // Passa 'true' como flag para recarregar
+        Navigator.pop(context, true); // Passa 'true' como flag para recarregar
       }
-        } catch (error) {
+    } catch (error) {
       _showMessage('Erro inesperado: $error');
     }
   }
