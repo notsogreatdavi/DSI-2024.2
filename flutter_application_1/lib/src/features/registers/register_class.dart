@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../common/constants/app_colors.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../common/constants/app_colors.dart';
 import 'dart:typed_data';
-import 'dart:io';
-import 'dart:html' as html;
 
 class RegisterClassScreen extends StatefulWidget {
   const RegisterClassScreen({super.key});
@@ -19,6 +17,7 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
   final TextEditingController _areaController = TextEditingController();
   final TextEditingController _atividadesController = TextEditingController();
   final SupabaseClient _supabase = Supabase.instance.client;
+
   Uint8List? _imagemSelecionada;
   String? _imagemUrl;
 
@@ -36,12 +35,11 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
   Future<String?> _fazerUploadImagem(Uint8List imagemBytes) async {
     try {
       final nomeArquivo = 'grupo_${DateTime.now().millisecondsSinceEpoch}.png';
-      final response = await _supabase.storage.from('imagensdsi').uploadBinary(
+      await _supabase.storage.from('imagensdsi').uploadBinary(
             nomeArquivo,
             imagemBytes,
             fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
           );
-      if (response.isEmpty) return null;
       return _supabase.storage.from('imagensdsi').getPublicUrl(nomeArquivo);
     } catch (error) {
       _showMessage('Erro ao enviar imagem: $error');
@@ -61,25 +59,33 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
     }
 
     try {
-      String? imagemUrl;
       if (_imagemSelecionada != null) {
-        imagemUrl = await _fazerUploadImagem(_imagemSelecionada!);
+        _imagemUrl = await _fazerUploadImagem(_imagemSelecionada!);
       }
 
-      await _supabase
+      final response = await _supabase
           .from('grupo')
           .insert({
             'nomeGroup': nome,
             'descricaoGroup': descricao,
             'areaGroup': area,
             'atividades': atividades.isNotEmpty ? atividades.split(',') : [],
-            'fotoUrl': imagemUrl,
+            'fotoUrl': _imagemUrl,
           })
           .select()
           .single();
 
-      _showMessage('Grupo cadastrado com sucesso! 🎉');
+      final grupoId = response['id'];
+      final userId = _supabase.auth.currentUser?.id;
 
+      if (userId != null) {
+        await _supabase.from('grupo_usuarios').insert({
+          'grupo_id': grupoId,
+          'usuario_id': userId,
+        });
+      }
+
+      _showMessage('Grupo cadastrado com sucesso! 🎉');
       if (mounted) {
         Navigator.pop(context, true);
       }
@@ -154,43 +160,39 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
               ),
             ),
             SizedBox(height: 16),
+            if (_imagemSelecionada != null)
+              Image.memory(
+                _imagemSelecionada!,
+                height: 100,
+                fit: BoxFit.cover,
+              ),
+            SizedBox(height: 10),
             Center(
-              child: Column(
-                children: [
-                  if (_imagemSelecionada != null)
-                    Image.memory(
-                      _imagemSelecionada!,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    ),
-                  SizedBox(height: 10),
-                  SizedBox(
-                    width: 200,
-                    height: 30,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.laranja,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          side: BorderSide(
-                            color: AppColors.azulEscuro,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                      onPressed: _selecionarImagem,
-                      child: Text(
-                        'Selecionar Imagem',
-                        style: TextStyle(
-                          color: AppColors.branco,
-                          fontFamily: 'Montserrat',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
+              child: SizedBox(
+                width: 200,
+                height: 30,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.laranja,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      side: BorderSide(
+                        color: AppColors.azulEscuro,
+                        width: 2,
                       ),
                     ),
                   ),
-                ],
+                  onPressed: _selecionarImagem,
+                  child: Text(
+                    'Selecionar Imagem',
+                    style: TextStyle(
+                      color: AppColors.branco,
+                      fontFamily: 'Montserrat',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ),
             ),
             SizedBox(height: 16),
