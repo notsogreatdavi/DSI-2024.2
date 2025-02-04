@@ -154,7 +154,7 @@ class HomeScreenState extends State<HomeScreen> {
                     "${usuario!['nome']} | ${usuario!['ativo'] ?? 0} dias ativos",
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 14,
+                      fontSize: 12,
                       fontFamily: "Montserrat",
                       fontWeight: FontWeight.w400,
                     ),
