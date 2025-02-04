@@ -7,6 +7,8 @@ import 'src/features/cadastro/cadastro_screen.dart';
 import 'src/features/home/home_screen.dart';
 import 'src/features/activities/activities_screen.dart';
 import 'src/features/registers/update_group.dart';
+import 'src/features/pomodoro/pomodoro_screen.dart';
+
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -46,6 +48,7 @@ class App extends StatelessWidget {
         '/login': (context) => LoginPage(),
         '/cadastro': (context) => CadastroPage(),
         '/home': (context) => const HomeScreen(),
+        '/pomodoro': (context) => const PomodoroScreen(),
       },
     );
   }
