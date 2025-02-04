@@ -13,8 +13,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  image_picker: ^1.0.7
+  image_picker_web: ^4.0.0
   supabase_flutter: ^2.0.0
-  image_picker: ^0.8.7+5
   uuid: ^3.0.7
   intl: ^0.17.0
   flutter_masked_text2: ^0.9.1
