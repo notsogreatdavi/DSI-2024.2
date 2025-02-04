@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../common/widgets/custom_navigation_bar.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter_masked_text2/flutter_masked_text2.dart';
+import '../../common/constants/app_colors.dart';
 
 class CreateActivityScreen extends StatefulWidget {
   final Map<String, dynamic> grupo;
@@ -13,9 +15,10 @@ class CreateActivityScreen extends StatefulWidget {
 
 class _CreateActivityScreenState extends State<CreateActivityScreen> {
   final _formKey = GlobalKey<FormState>();
-  String titulo = '';
-  String descricao = '';
-  bool isLoading = false;
+  final TextEditingController _tituloController = TextEditingController();
+  final TextEditingController _descricaoController = TextEditingController();
+  final MaskedTextController _dataController = MaskedTextController(mask: '00/00/0000');
+  final MaskedTextController _horaController = MaskedTextController(mask: '00:00');
   String errorMessage = '';
 
   Future<void> _createActivity() async {
@@ -24,26 +27,39 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
     }
 
     setState(() {
-      isLoading = true;
       errorMessage = '';
     });
 
     try {
-      final response = await Supabase.instance.client.from('atividade').insert({
-        'titulo_ativi': titulo,
-        'descricao_ativi': descricao,
-        'grupo_id': widget.grupo['id'],
-      });
+      final DateTime dateTime = DateFormat('dd/MM/yyyy HH:mm').parse(
+        '${_dataController.text} ${_horaController.text}',
+      );
 
-      if (response.error != null) {
-        throw response.error!;
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+
+      if (userId == null) {
+        throw Exception('Usuário não está logado');
+      }
+
+      final fotoUrl = 'https://zvurnjqmcegutysaqrjs.supabase.co/storage/v1/object/public/imagensdsi//book-placeholder.png';
+
+      final response = await Supabase.instance.client.from('atividade').insert({
+        'titulo_ativi': _tituloController.text.trim(),
+        'descricao_ativi': _descricaoController.text.trim(),
+        'grupo_id': widget.grupo['id'],
+        'id_aluno': userId,
+        'fotoUrlAtivi': fotoUrl,
+        'created_at': dateTime.toIso8601String(),
+      }).select().single();
+
+      if (response.isEmpty) {
+        throw Exception('Erro ao criar atividade');
       }
 
       Navigator.pop(context, true);
     } catch (e) {
       setState(() {
         errorMessage = 'Erro ao criar atividade: $e';
-        isLoading = false;
       });
     }
   }
@@ -51,65 +67,159 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomNavigationBar(
-        title: 'Criar Atividade',
-        onBackButtonPressed: () {
-          Navigator.pop(context);
-        },
-        onProfileButtonPressed: () {
-          // Adicione a ação desejada aqui
-        },
-        onMoreButtonPressed: () {
-          // Adicione a ação desejada aqui
-        },
+      appBar: AppBar(
+        title: const Text('Cadastrar Atividade'),
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
               TextFormField(
-                decoration: InputDecoration(labelText: 'Título'),
+                controller: _tituloController,
+                decoration: InputDecoration(
+                  labelText: 'Título',
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: AppColors.azulEscuro,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: AppColors.azulEscuro,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, insira um título';
                   }
                   return null;
                 },
-                onChanged: (value) {
-                  setState(() {
-                    titulo = value;
-                  });
-                },
               ),
+              SizedBox(height: 16),
               TextFormField(
-                decoration: InputDecoration(labelText: 'Descrição'),
+                controller: _descricaoController,
+                decoration: InputDecoration(
+                  labelText: 'Descrição',
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: AppColors.azulEscuro,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: AppColors.azulEscuro,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                maxLines: 3,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, insira uma descrição';
                   }
                   return null;
                 },
-                onChanged: (value) {
-                  setState(() {
-                    descricao = value;
-                  });
+              ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: _dataController,
+                decoration: InputDecoration(
+                  labelText: 'Data (DD/MM/YYYY)',
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: AppColors.azulEscuro,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: AppColors.azulEscuro,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira a data';
+                  }
+                  return null;
                 },
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: _horaController,
+                decoration: InputDecoration(
+                  labelText: 'Hora (HH:MM)',
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: AppColors.azulEscuro,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: AppColors.azulEscuro,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira a hora';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 24),
               if (errorMessage.isNotEmpty)
                 Text(
                   errorMessage,
                   style: TextStyle(color: Colors.red),
                 ),
-              const SizedBox(height: 20),
-              isLoading
-                  ? CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _createActivity,
-                      child: Text('Criar Atividade'),
+              SizedBox(height: 24),
+              Center(
+                child: SizedBox(
+                  width: 180,
+                  height: 30,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.laranja,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        side: BorderSide(
+                          color: AppColors.azulEscuro,
+                          width: 2,
+                        ),
+                      ),
                     ),
+                    onPressed: _createActivity,
+                    child: Text(
+                      'Criar Atividade',
+                      style: TextStyle(
+                        color: AppColors.branco,
+                        fontFamily: 'Montserrat',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
