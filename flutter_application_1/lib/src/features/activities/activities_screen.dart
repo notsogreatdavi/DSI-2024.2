@@ -197,59 +197,71 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
       );
       for (var atividade in gruposAtividades[dateKey]!) {
         activityWidgets.add(
-          Card(
-            color: AppColors.azulEscuro,
-            margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            child: ListTile(
-              // Exibe a imagem da atividade e, sobreposta, a foto do usuário (da tabela usuarios)
-              leading: atividade['fotoUrlAtivi'] != null
-                  ? Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 25,
-                          backgroundImage:
-                              NetworkImage(atividade['fotoUrlAtivi']),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: CircleAvatar(
-                            radius: 10,
-                            backgroundImage: atividade['usuarios'] != null &&
-                                    atividade['usuarios']['fotoUrlPerfil'] != null
-                                ? NetworkImage(atividade['usuarios']
-                                    ['fotoUrlPerfil'])
-                                : null,
-                            backgroundColor: AppColors.branco,
+          GestureDetector(
+            onTap: () async {
+              final result = await Navigator.pushNamed(
+                context,
+                '/update-delete_activity',
+                arguments: {'atividade': atividade},
+              );
+              if (result == true) {
+                _loadAtividades(); // Recarrega as atividades após atualização ou exclusão
+              }
+            },
+            child: Card(
+              color: AppColors.azulEscuro,
+              margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: ListTile(
+                // Exibe a imagem da atividade e, sobreposta, a foto do usuário (da tabela usuarios)
+                leading: atividade['fotoUrlAtivi'] != null
+                    ? Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 25,
+                            backgroundImage:
+                                NetworkImage(atividade['fotoUrlAtivi']),
                           ),
-                        ),
-                      ],
-                    )
-                  : null,
-              title: Text(
-                atividade['titulo_ativi'] ?? 'Sem título',
-                style: const TextStyle(
-                  fontFamily: 'Montserrat-semibold',
-                  fontSize: 18,
-                  color: AppColors.branco,
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: CircleAvatar(
+                              radius: 10,
+                              backgroundImage: atividade['usuarios'] != null &&
+                                      atividade['usuarios']['fotoUrlPerfil'] != null
+                                  ? NetworkImage(atividade['usuarios']
+                                      ['fotoUrlPerfil'])
+                                  : null,
+                              backgroundColor: AppColors.branco,
+                            ),
+                          ),
+                        ],
+                      )
+                    : null,
+                title: Text(
+                  atividade['titulo_ativi'] ?? 'Sem título',
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat-semibold',
+                    fontSize: 18,
+                    color: AppColors.branco,
+                  ),
                 ),
-              ),
-              subtitle: Text(
-                atividade['descricao_ativi'] ?? 'Sem descrição',
-                style: const TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 14,
-                  color: AppColors.branco,
+                subtitle: Text(
+                  atividade['descricao_ativi'] ?? 'Sem descrição',
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 14,
+                    color: AppColors.branco,
+                  ),
                 ),
-              ),
-              trailing: Text(
-                DateFormat("HH'h'mm").format(
-                  DateTime.parse(atividade['created_at']),
-                ),
-                style: const TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 12,
-                  color: AppColors.branco,
+                trailing: Text(
+                  DateFormat("HH'h'mm").format(
+                    DateTime.parse(atividade['created_at']),
+                  ),
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 12,
+                    color: AppColors.branco,
+                  ),
                 ),
               ),
             ),

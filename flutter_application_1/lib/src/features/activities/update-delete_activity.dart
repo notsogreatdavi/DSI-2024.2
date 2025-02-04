@@ -4,16 +4,16 @@ import 'package:intl/intl.dart';
 import 'package:flutter_masked_text2/flutter_masked_text2.dart';
 import '../../common/constants/app_colors.dart';
 
-class CreateActivityScreen extends StatefulWidget {
-  final Map<String, dynamic> grupo;
+class UpdateDeleteActivityScreen extends StatefulWidget {
+  final Map<String, dynamic> atividade;
 
-  const CreateActivityScreen({super.key, required this.grupo});
+  const UpdateDeleteActivityScreen({super.key, required this.atividade});
 
   @override
-  _CreateActivityScreenState createState() => _CreateActivityScreenState();
+  _UpdateDeleteActivityScreenState createState() => _UpdateDeleteActivityScreenState();
 }
 
-class _CreateActivityScreenState extends State<CreateActivityScreen> {
+class _UpdateDeleteActivityScreenState extends State<UpdateDeleteActivityScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _tituloController = TextEditingController();
   final TextEditingController _descricaoController = TextEditingController();
@@ -21,7 +21,17 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
   final MaskedTextController _horaController = MaskedTextController(mask: '00:00');
   String errorMessage = '';
 
-  Future<void> _createActivity() async {
+  @override
+  void initState() {
+    super.initState();
+    _tituloController.text = widget.atividade['titulo_ativi'] ?? '';
+    _descricaoController.text = widget.atividade['descricao_ativi'] ?? '';
+    final DateTime dateTime = DateTime.parse(widget.atividade['created_at']);
+    _dataController.text = DateFormat('dd/MM/yyyy').format(dateTime);
+    _horaController.text = DateFormat('HH:mm').format(dateTime);
+  }
+
+  Future<void> _updateActivity() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -35,41 +45,76 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
         '${_dataController.text} ${_horaController.text}',
       );
 
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-
-      if (userId == null) {
-        throw Exception('Usuário não está logado');
-      }
-
-      final fotoUrl = 'https://zvurnjqmcegutysaqrjs.supabase.co/storage/v1/object/public/imagensdsi//book-placeholder.png';
-
-      final response = await Supabase.instance.client.from('atividade').insert({
+      final response = await Supabase.instance.client.from('atividade').update({
         'titulo_ativi': _tituloController.text.trim(),
         'descricao_ativi': _descricaoController.text.trim(),
-        'grupo_id': widget.grupo['id'],
-        'id_aluno': userId,
-        'fotoUrlAtivi': fotoUrl,
         'created_at': dateTime.toIso8601String(),
-      }).select().single();
+      }).match({'id': widget.atividade['id']}).select().single();
 
       if (response.isEmpty) {
-        throw Exception('Erro ao criar atividade');
+        throw Exception('Erro ao atualizar atividade');
       }
 
-      Navigator.pop(context, true);
+      Navigator.pop(context, true); // Indica que a atividade foi atualizada
     } catch (e) {
       setState(() {
-        errorMessage = 'Erro ao criar atividade: $e';
+        errorMessage = 'Erro ao atualizar atividade: $e';
       });
     }
+  }
+
+  Future<void> _deleteActivity() async {
+    try {
+      await Supabase.instance.client.from('atividade').delete().match({'id': widget.atividade['id']});
+      Navigator.pop(context, true); // Indica que a atividade foi deletada
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Erro ao deletar atividade: $e';
+      });
+    }
+  }
+
+  Future<bool> _confirmDelete(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Confirmar Exclusão'),
+            content: const Text('Tem certeza que deseja excluir esta atividade?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text(
+                  'Excluir',
+                  style: TextStyle(color: AppColors.laranja),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cadastrar Atividade'),
+        title: const Text('Atualizar Atividade'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete, color: AppColors.laranja),
+            onPressed: () async {
+              final confirm = await _confirmDelete(context);
+              if (confirm) {
+                _deleteActivity();
+              }
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -189,13 +234,13 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
               if (errorMessage.isNotEmpty)
                 Text(
                   errorMessage,
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: AppColors.laranja),
                 ),
               SizedBox(height: 24),
               Center(
                 child: SizedBox(
-                  width: 210,
-                  height: 45,
+                  width: 210, 
+                  height: 45, 
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.laranja,
@@ -207,9 +252,9 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                         ),
                       ),
                     ),
-                    onPressed: _createActivity,
+                    onPressed: _updateActivity,
                     child: Text(
-                      'Criar Atividade',
+                      'Atualizar Atividade',
                       style: TextStyle(
                         color: AppColors.branco,
                         fontFamily: 'Montserrat',
