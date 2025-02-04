@@ -406,7 +406,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                                               radius: 10,
                                               backgroundColor: AppColors.pretoClaro,
                                               child: Text(
-                                                '${loggedInUserRank}°',
+                                                '$loggedInUserRank°',
                                                 style: const TextStyle(
                                                   color: AppColors.branco,
                                                   fontSize: 12,
@@ -467,8 +467,8 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
         onPressed: () async {
           final novaAtividade = await Navigator.pushNamed(
             context,
-            '/register_activity',
-            arguments: {'grupoId': grupo['id']},
+            '/create_activity',
+            arguments: {'grupo': grupo},
           );
           if (novaAtividade != null) {
             await _loadAtividades();
