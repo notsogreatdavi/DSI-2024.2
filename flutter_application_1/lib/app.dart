@@ -6,9 +6,10 @@ import 'src/features/login/login_screen.dart';
 import 'src/features/cadastro/cadastro_screen.dart';
 import 'src/features/home/home_screen.dart';
 import 'src/features/activities/activities_screen.dart';
+import 'src/features/activities/create_activity.dart';
 import 'src/features/registers/update_group.dart';
 import 'src/features/pomodoro/pomodoro_screen.dart';
-
+import 'src/features/activities/update-delete_activity.dart'; 
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -21,23 +22,36 @@ class App extends StatelessWidget {
         if (settings.name == '/activities') {
           final args = settings.arguments as Map<String, dynamic>;
           return MaterialPageRoute(
-            builder: (context) {
-              return ActivitiesScreen(grupo: args['grupo']);
-            },
+            builder: (context) => ActivitiesScreen(grupo: args['grupo']),
           );
         } else if (settings.name == '/ranking') {
           final args = settings.arguments as Map<String, dynamic>;
           return MaterialPageRoute(
-            builder: (context) {
-              return RankingScreen(grupo: args['grupo']);
-            },
+            builder: (context) => RankingScreen(grupo: args['grupo']),
           );
         } else if (settings.name == '/update_group') {
           final args = settings.arguments as Map<String, dynamic>;
           return MaterialPageRoute(
-            builder: (context) {
-              return UpdateGroupScreen(grupo: args['grupo']);
-            },
+            builder: (context) => UpdateGroupScreen(grupo: args['grupo']),
+          );
+        } else if (settings.name == '/create_activity') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) => CreateActivityScreen(grupo: args['grupo']),
+          );
+        } else if (settings.name == '/update-delete_activity') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) => UpdateDeleteActivityScreen(atividade: args['atividade']),
+          );
+        } else if (settings.name == '/pomodoro') {
+          // ✅ Pegando os argumentos corretamente
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) => PomodoroScreen(
+              usuarioId: args['usuarioId'],
+              grupoId: args['grupoId'],
+            ),
           );
         }
         return null;
@@ -48,7 +62,6 @@ class App extends StatelessWidget {
         '/login': (context) => LoginPage(),
         '/cadastro': (context) => CadastroPage(),
         '/home': (context) => const HomeScreen(),
-        '/pomodoro': (context) => const PomodoroScreen(),
       },
     );
   }

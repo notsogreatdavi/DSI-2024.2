@@ -108,16 +108,34 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     }
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      if (index == 0) {
-        Navigator.pushNamed(context, '/pomodoro');
-      } else if (index == 2) {
-        Navigator.pushNamed(context, '/ranking', arguments: {'grupo': grupo});
+void _onItemTapped(int index) {
+  setState(() {
+    _selectedIndex = index;
+    if (index == 0) {
+      // Obtendo o ID do usuário logado
+      final supabase = Supabase.instance.client;
+      final usuarioId = supabase.auth.currentUser?.id;
+
+      if (usuarioId != null) {
+        Navigator.pushNamed(
+          context,
+          '/pomodoro',
+          arguments: {
+            'usuarioId': usuarioId,
+            'grupoId': grupo['id'], // Pegando o ID do grupo atual
+          },
+        );
+      } else {
+        // Tratar erro caso o usuário não esteja autenticado
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro: usuário não autenticado!')),
+        );
       }
-    });
-  }
+    } else if (index == 2) {
+      Navigator.pushNamed(context, '/ranking', arguments: {'grupo': grupo});
+    }
+  });
+}
 
   /// Retorna o cabeçalho para o grupo de atividades com base na data
   String _getHeader(String dateKey) {
@@ -197,59 +215,71 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
       );
       for (var atividade in gruposAtividades[dateKey]!) {
         activityWidgets.add(
-          Card(
-            color: AppColors.azulEscuro,
-            margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            child: ListTile(
-              // Exibe a imagem da atividade e, sobreposta, a foto do usuário (da tabela usuarios)
-              leading: atividade['fotoUrlAtivi'] != null
-                  ? Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 25,
-                          backgroundImage:
-                              NetworkImage(atividade['fotoUrlAtivi']),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: CircleAvatar(
-                            radius: 10,
-                            backgroundImage: atividade['usuarios'] != null &&
-                                    atividade['usuarios']['fotoUrlPerfil'] != null
-                                ? NetworkImage(atividade['usuarios']
-                                    ['fotoUrlPerfil'])
-                                : null,
-                            backgroundColor: AppColors.branco,
+          GestureDetector(
+            onTap: () async {
+              final result = await Navigator.pushNamed(
+                context,
+                '/update-delete_activity',
+                arguments: {'atividade': atividade},
+              );
+              if (result == true) {
+                _loadAtividades(); // Recarrega as atividades após atualização ou exclusão
+              }
+            },
+            child: Card(
+              color: AppColors.azulEscuro,
+              margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: ListTile(
+                // Exibe a imagem da atividade e, sobreposta, a foto do usuário (da tabela usuarios)
+                leading: atividade['fotoUrlAtivi'] != null
+                    ? Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 25,
+                            backgroundImage:
+                                NetworkImage(atividade['fotoUrlAtivi']),
                           ),
-                        ),
-                      ],
-                    )
-                  : null,
-              title: Text(
-                atividade['titulo_ativi'] ?? 'Sem título',
-                style: const TextStyle(
-                  fontFamily: 'Montserrat-semibold',
-                  fontSize: 18,
-                  color: AppColors.branco,
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: CircleAvatar(
+                              radius: 10,
+                              backgroundImage: atividade['usuarios'] != null &&
+                                      atividade['usuarios']['fotoUrlPerfil'] != null
+                                  ? NetworkImage(atividade['usuarios']
+                                      ['fotoUrlPerfil'])
+                                  : null,
+                              backgroundColor: AppColors.branco,
+                            ),
+                          ),
+                        ],
+                      )
+                    : null,
+                title: Text(
+                  atividade['titulo_ativi'] ?? 'Sem título',
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat-semibold',
+                    fontSize: 18,
+                    color: AppColors.branco,
+                  ),
                 ),
-              ),
-              subtitle: Text(
-                atividade['descricao_ativi'] ?? 'Sem descrição',
-                style: const TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 14,
-                  color: AppColors.branco,
+                subtitle: Text(
+                  atividade['descricao_ativi'] ?? 'Sem descrição',
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 14,
+                    color: AppColors.branco,
+                  ),
                 ),
-              ),
-              trailing: Text(
-                DateFormat("HH'h'mm").format(
-                  DateTime.parse(atividade['created_at']),
-                ),
-                style: const TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 12,
-                  color: AppColors.branco,
+                trailing: Text(
+                  DateFormat("HH'h'mm").format(
+                    DateTime.parse(atividade['created_at']),
+                  ),
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 12,
+                    color: AppColors.branco,
+                  ),
                 ),
               ),
             ),
@@ -406,7 +436,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                                               radius: 10,
                                               backgroundColor: AppColors.pretoClaro,
                                               child: Text(
-                                                '${loggedInUserRank}°',
+                                                '$loggedInUserRank°',
                                                 style: const TextStyle(
                                                   color: AppColors.branco,
                                                   fontSize: 12,
@@ -467,8 +497,8 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
         onPressed: () async {
           final novaAtividade = await Navigator.pushNamed(
             context,
-            '/register_activity',
-            arguments: {'grupoId': grupo['id']},
+            '/create_activity',
+            arguments: {'grupo': grupo},
           );
           if (novaAtividade != null) {
             await _loadAtividades();

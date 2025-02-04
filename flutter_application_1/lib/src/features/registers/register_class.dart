@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../common/constants/app_colors.dart';
+import 'dart:typed_data';
 
 class RegisterClassScreen extends StatefulWidget {
   const RegisterClassScreen({super.key});
@@ -14,10 +16,37 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
   final TextEditingController _descricaoController = TextEditingController();
   final TextEditingController _areaController = TextEditingController();
   final TextEditingController _atividadesController = TextEditingController();
-
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  // Função para registrar o grupo
+  Uint8List? _imagemSelecionada;
+  String? _imagemUrl;
+
+  Future<void> _selecionarImagem() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? imagem = await picker.pickImage(source: ImageSource.gallery);
+    if (imagem != null) {
+      final bytes = await imagem.readAsBytes();
+      setState(() {
+        _imagemSelecionada = bytes;
+      });
+    }
+  }
+
+  Future<String?> _fazerUploadImagem(Uint8List imagemBytes) async {
+    try {
+      final nomeArquivo = 'grupo_${DateTime.now().millisecondsSinceEpoch}.png';
+      await _supabase.storage.from('imagensdsi').uploadBinary(
+            nomeArquivo,
+            imagemBytes,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+          );
+      return _supabase.storage.from('imagensdsi').getPublicUrl(nomeArquivo);
+    } catch (error) {
+      _showMessage('Erro ao enviar imagem: $error');
+      return null;
+    }
+  }
+
   Future<void> _registrarGrupo() async {
     final nome = _nomeController.text.trim();
     final descricao = _descricaoController.text.trim();
@@ -30,7 +59,10 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
     }
 
     try {
-      // Insere o grupo no banco de dados
+      if (_imagemSelecionada != null) {
+        _imagemUrl = await _fazerUploadImagem(_imagemSelecionada!);
+      }
+
       final response = await _supabase
           .from('grupo')
           .insert({
@@ -38,6 +70,7 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
             'descricaoGroup': descricao,
             'areaGroup': area,
             'atividades': atividades.isNotEmpty ? atividades.split(',') : [],
+            'fotoUrl': _imagemUrl,
           })
           .select()
           .single();
@@ -46,7 +79,6 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
       final userId = _supabase.auth.currentUser?.id;
 
       if (userId != null) {
-        // Associa o usuário logado ao grupo recém-criado
         await _supabase.from('grupo_usuarios').insert({
           'grupo_id': grupoId,
           'usuario_id': userId,
@@ -54,17 +86,14 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
       }
 
       _showMessage('Grupo cadastrado com sucesso! 🎉');
-
-      // Volta para a tela anterior (home) com um sinal para recarregar os dados
       if (mounted) {
-        Navigator.pop(context, true); // Passa 'true' como flag para recarregar
+        Navigator.pop(context, true);
       }
     } catch (error) {
       _showMessage('Erro inesperado: $error');
     }
   }
 
-  // Função para exibir mensagens
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -85,107 +114,112 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            // Campo para o nome do grupo
             TextField(
               controller: _nomeController,
               decoration: InputDecoration(
                 labelText: 'Nome do Grupo',
                 enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderSide: BorderSide(color: AppColors.azulEscuro, width: 2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderSide: BorderSide(color: AppColors.azulEscuro, width: 2),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
             ),
             SizedBox(height: 16),
-
-            // Campo para a descrição do grupo
             TextField(
               controller: _descricaoController,
               decoration: InputDecoration(
                 labelText: 'Descrição',
                 enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderSide: BorderSide(color: AppColors.azulEscuro, width: 2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderSide: BorderSide(color: AppColors.azulEscuro, width: 2),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
               maxLines: 3,
             ),
             SizedBox(height: 16),
-
-            // Campo para a área do grupo
             TextField(
               controller: _areaController,
               decoration: InputDecoration(
                 labelText: 'Área',
                 enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderSide: BorderSide(color: AppColors.azulEscuro, width: 2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                      color: AppColors.azulEscuro, width: 2), // Borda azul
+                  borderSide: BorderSide(color: AppColors.azulEscuro, width: 2),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
             ),
             SizedBox(height: 16),
-
-            // Campo para as atividades do grupo
-            TextField(
-              controller: _atividadesController,
-              decoration: InputDecoration(
-                labelText: 'Atividades (separadas por vírgula)',
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                      color: AppColors.azulEscuro, width: 2), // Borda azul
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide:
-                      BorderSide(color: Colors.blue, width: 2), // Borda azul
-                  borderRadius: BorderRadius.circular(4),
-                ),
+            if (_imagemSelecionada != null)
+              Image.memory(
+                _imagemSelecionada!,
+                height: 100,
+                fit: BoxFit.cover,
               ),
-            ),
-            SizedBox(height: 24),
-
-            // Botão para registrar o grupo
+            SizedBox(height: 10),
             Center(
               child: SizedBox(
-                width: 180, // Define a largura fixa do botão
-                height: 30, // Define a altura fixa do botão
+                width: 200,
+                height: 30,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.laranja,
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(30), // Arredondando o botão
+                      borderRadius: BorderRadius.circular(30),
                       side: BorderSide(
-                          color: AppColors.azulEscuro,
-                          width: 2), // Borda do botão
+                        color: AppColors.azulEscuro,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  onPressed: _selecionarImagem,
+                  child: Text(
+                    'Selecionar Imagem',
+                    style: TextStyle(
+                      color: AppColors.branco,
+                      fontFamily: 'Montserrat',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            Center(
+              child: SizedBox(
+                width: 200,
+                height: 30,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.laranja,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      side: BorderSide(
+                        color: AppColors.azulEscuro,
+                        width: 2,
+                      ),
                     ),
                   ),
                   onPressed: _registrarGrupo,
                   child: Text(
                     'Registrar Grupo',
                     style: TextStyle(
-                        color: AppColors.branco,
-                        fontFamily: 'Montserrat',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600),
+                      color: AppColors.branco,
+                      fontFamily: 'Montserrat',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
