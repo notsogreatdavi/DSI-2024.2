@@ -6,7 +6,9 @@ import 'src/features/login/login_screen.dart';
 import 'src/features/cadastro/cadastro_screen.dart';
 import 'src/features/home/home_screen.dart';
 import 'src/features/activities/activities_screen.dart';
+import 'src/features/activities/create_activity.dart';
 import 'src/features/registers/update_group.dart';
+import 'src/features/activities/update-delete_activity.dart'; 
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -35,6 +37,20 @@ class App extends StatelessWidget {
           return MaterialPageRoute(
             builder: (context) {
               return UpdateGroupScreen(grupo: args['grupo']);
+            },
+          );
+        } else if (settings.name == '/create_activity') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) {
+              return CreateActivityScreen(grupo: args['grupo']);
+            },
+          );
+        } else if (settings.name == '/update-delete_activity') { // Adicionando a nova rota
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) {
+              return UpdateDeleteActivityScreen(atividade: args['atividade']);
             },
           );
         }
