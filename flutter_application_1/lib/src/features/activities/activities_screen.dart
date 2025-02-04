@@ -15,7 +15,7 @@ class ActivitiesScreen extends StatefulWidget {
 }
 
 class _ActivitiesScreenState extends State<ActivitiesScreen> {
-  int _selectedIndex = 2;
+  int _selectedIndex = 1;
   late Map<String, dynamic> grupo;
   List<Map<String, dynamic>> atividades = [];
   bool isLoading = true;

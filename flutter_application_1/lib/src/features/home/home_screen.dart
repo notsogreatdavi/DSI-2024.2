@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/constants/app_colors.dart';
 import '../registers/register_class.dart';
 import '../registers/delete_group.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -42,6 +41,7 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  
   // Função para buscar os grupos no Supabase
   Future<void> _loadGrupos() async {
     final response = await Supabase.instance.client
