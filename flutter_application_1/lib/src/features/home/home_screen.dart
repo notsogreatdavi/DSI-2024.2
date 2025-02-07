@@ -41,6 +41,7 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  
   // Função para buscar os grupos no Supabase
   Future<void> _loadGrupos() async {
     final response = await Supabase.instance.client

@@ -15,7 +15,7 @@ class ActivitiesScreen extends StatefulWidget {
 }
 
 class _ActivitiesScreenState extends State<ActivitiesScreen> {
-  int _selectedIndex = 2;
+  int _selectedIndex = 1;
   late Map<String, dynamic> grupo;
   List<Map<String, dynamic>> atividades = [];
   bool isLoading = true;
@@ -108,16 +108,34 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     }
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      if (index == 0) {
-        Navigator.pushNamed(context, '/pomodoro');
-      } else if (index == 2) {
-        Navigator.pushNamed(context, '/ranking', arguments: {'grupo': grupo});
+void _onItemTapped(int index) {
+  setState(() {
+    _selectedIndex = index;
+    if (index == 0) {
+      // Obtendo o ID do usuário logado
+      final supabase = Supabase.instance.client;
+      final usuarioId = supabase.auth.currentUser?.id;
+
+      if (usuarioId != null) {
+        Navigator.pushNamed(
+          context,
+          '/pomodoro',
+          arguments: {
+            'usuarioId': usuarioId,
+            'grupoId': grupo['id'], // Pegando o ID do grupo atual
+          },
+        );
+      } else {
+        // Tratar erro caso o usuário não esteja autenticado
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro: usuário não autenticado!')),
+        );
       }
-    });
-  }
+    } else if (index == 2) {
+      Navigator.pushNamed(context, '/ranking', arguments: {'grupo': grupo});
+    }
+  });
+}
 
   /// Retorna o cabeçalho para o grupo de atividades com base na data
   String _getHeader(String dateKey) {
