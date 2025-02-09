@@ -23,8 +23,8 @@ class CustomBottomNavigationBar extends StatelessWidget {
       ),
       child: GNav(
         gap: 8,
-        color: Colors.white, // Cor dos ícones não selecionados
-        activeColor: Colors.white, // Cor dos ícones selecionados
+        color: Colors.white, // Ícones não selecionados
+        activeColor: Colors.white, // Ícones selecionados
         backgroundColor: AppColors.azulEscuro,
         tabBackgroundColor: Colors.white.withOpacity(0.2), // Fundo do ícone selecionado
         padding: const EdgeInsets.all(16),
@@ -42,6 +42,10 @@ class CustomBottomNavigationBar extends StatelessWidget {
           GButton(
             icon: FeatherIcons.award,
             text: 'Ranking',
+          ),
+          GButton(
+            icon: FeatherIcons.map, // Novo botão do mapa 🗺️
+            text: 'Mapa',
           ),
         ],
       ),
