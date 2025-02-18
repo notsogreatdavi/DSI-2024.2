@@ -134,6 +134,9 @@ void _onItemTapped(int index) {
     } else if (index == 2) {
       Navigator.pushNamed(context, '/ranking', arguments: {'grupo': grupo});
     }
+     else if (index == 3) { 
+      Navigator.pushNamed(context, '/map');
+     }
   });
 }
 

@@ -10,6 +10,7 @@ import 'src/features/activities/create_activity.dart';
 import 'src/features/registers/update_group.dart';
 import 'src/features/pomodoro/pomodoro_screen.dart';
 import 'src/features/activities/update-delete_activity.dart'; 
+import 'src/features/map/map_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -62,6 +63,7 @@ class App extends StatelessWidget {
         '/login': (context) => LoginPage(),
         '/cadastro': (context) => CadastroPage(),
         '/home': (context) => const HomeScreen(),
+        '/map': (context) => MapScreen(),
       },
     );
   }
