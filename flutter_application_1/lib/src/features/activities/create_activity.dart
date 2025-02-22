@@ -43,7 +43,34 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
 
       final fotoUrl = 'https://zvurnjqmcegutysaqrjs.supabase.co/storage/v1/object/public/imagensdsi//book-placeholder.png';
 
-      final response = await Supabase.instance.client.from('atividade').insert({
+      // Verifica o último dia ativo do usuário
+      final userResponse = await Supabase.instance.client
+          .from('usuarios')
+          .select('ativo, ultimo_dia_ativo')
+          .eq('id', userId)
+          .single();
+
+      // Adiciona o método data() ao userResponse
+      Map<String, dynamic> userResponseData() {
+        return userResponse as Map<String, dynamic>;
+      }
+
+      final Map<String, dynamic> user = userResponseData();
+      final DateTime today = DateTime.now();
+      final DateTime lastActiveDate = DateTime.parse(user['ultimo_dia_ativo']);
+
+      // Verifica a sequência do usuário no grupo
+      final grupoUsuarioResponse = await Supabase.instance.client
+          .from('grupo_usuarios')
+          .select('sequencia')
+          .eq('grupo_id', widget.grupo['id'])
+          .eq('usuario_id', userId)
+          .single();
+
+      final int sequenciaAtual = grupoUsuarioResponse['sequencia'];
+
+      // Cria a atividade
+      final activityResponse = await Supabase.instance.client.from('atividade').insert({
         'titulo_ativi': _tituloController.text.trim(),
         'descricao_ativi': _descricaoController.text.trim(),
         'grupo_id': widget.grupo['id'],
@@ -52,8 +79,25 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
         'created_at': dateTime.toIso8601String(),
       }).select().single();
 
-      if (response.isEmpty) {
+      if (activityResponse.isEmpty) {
         throw Exception('Erro ao criar atividade');
+      }
+
+      // Atualiza os dados do usuário e do grupo se o último dia ativo não for hoje
+      if (lastActiveDate.year != today.year ||
+          lastActiveDate.month != today.month ||
+          lastActiveDate.day != today.day) {
+        final int novoAtivo = user['ativo'] + 1;
+        final int novaSequencia = sequenciaAtual + 1;
+
+        await Supabase.instance.client.from('usuarios').update({
+          'ultimo_dia_ativo': DateFormat('yyyy-MM-dd').format(today),
+          'ativo': novoAtivo,
+        }).eq('id', userId);
+
+        await Supabase.instance.client.from('grupo_usuarios').update({
+          'sequencia': novaSequencia,
+        }).eq('grupo_id', widget.grupo['id']).eq('usuario_id', userId);
       }
 
       Navigator.pop(context, true);
