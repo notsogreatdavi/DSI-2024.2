@@ -35,6 +35,14 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
         '${_dataController.text} ${_horaController.text}',
       );
 
+      final DateTime now = DateTime.now();
+      if (dateTime.isAfter(now)) {
+        setState(() {
+          errorMessage = 'A data da atividade não pode ser no futuro.';
+        });
+        return;
+      }
+
       final userId = Supabase.instance.client.auth.currentUser?.id;
 
       if (userId == null) {
@@ -52,11 +60,10 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
 
       // Adiciona o método data() ao userResponse
       Map<String, dynamic> userResponseData() {
-        return userResponse as Map<String, dynamic>;
+        return userResponse;
       }
 
       final Map<String, dynamic> user = userResponseData();
-      final DateTime today = DateTime.now();
       final DateTime lastActiveDate = DateTime.parse(user['ultimo_dia_ativo']);
 
       // Verifica a sequência do usuário no grupo
@@ -83,15 +90,26 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
         throw Exception('Erro ao criar atividade');
       }
 
-      // Atualiza os dados do usuário e do grupo se o último dia ativo não for hoje
-      if (lastActiveDate.year != today.year ||
-          lastActiveDate.month != today.month ||
-          lastActiveDate.day != today.day) {
+      // Atualiza os dados do usuário e do grupo se a data da nova atividade for diferente de ultimo_dia_ativo
+      if (dateTime.isBefore(lastActiveDate)) {
+        // A nova atividade é anterior ao último dia ativo
         final int novoAtivo = user['ativo'] + 1;
         final int novaSequencia = sequenciaAtual + 1;
 
         await Supabase.instance.client.from('usuarios').update({
-          'ultimo_dia_ativo': DateFormat('yyyy-MM-dd').format(today),
+          'ativo': novoAtivo,
+        }).eq('id', userId);
+
+        await Supabase.instance.client.from('grupo_usuarios').update({
+          'sequencia': novaSequencia,
+        }).eq('grupo_id', widget.grupo['id']).eq('usuario_id', userId);
+      } else if (dateTime.isAfter(lastActiveDate)) {
+        // A nova atividade é posterior ao último dia ativo
+        final int novoAtivo = user['ativo'] + 1;
+        final int novaSequencia = sequenciaAtual + 1;
+
+        await Supabase.instance.client.from('usuarios').update({
+          'ultimo_dia_ativo': DateFormat('yyyy-MM-dd').format(dateTime),
           'ativo': novoAtivo,
         }).eq('id', userId);
 
