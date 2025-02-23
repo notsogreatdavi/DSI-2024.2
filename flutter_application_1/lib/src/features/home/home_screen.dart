@@ -31,7 +31,8 @@ class HomeScreenState extends State<HomeScreen> {
     if (user != null) {
       final response = await Supabase.instance.client
           .from('usuarios')
-          .select('nome, ativo') // Busca a coluna 'nome' e 'ativo'
+          .select(
+              'nome, ativo,fotoUrlPerfil') // Busca a coluna 'nome' e 'ativo'
           .eq('id', user.id)
           .single();
 
@@ -41,7 +42,6 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  
   // Função para buscar os grupos no Supabase
   Future<void> _loadGrupos() async {
     final response = await Supabase.instance.client
@@ -93,8 +93,12 @@ class HomeScreenState extends State<HomeScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            const CircleAvatar(
-              backgroundImage: AssetImage('assets/images/teste.jpg'),
+            CircleAvatar(
+              backgroundImage:
+                  usuario != null && usuario!['fotoUrlPerfil'] != null
+                      ? NetworkImage(usuario!['fotoUrlPerfil'])
+                      : const AssetImage('assets/images/teste.jpg')
+                          as ImageProvider,
               radius: 18,
             ),
             const SizedBox(width: 5),
@@ -145,8 +149,12 @@ class HomeScreenState extends State<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  const CircleAvatar(
-                    backgroundImage: AssetImage('assets/images/teste.jpg'),
+                  CircleAvatar(
+                    backgroundImage:
+                        usuario != null && usuario!['fotoUrlPerfil'] != null
+                            ? NetworkImage(usuario!['fotoUrlPerfil'])
+                            : const AssetImage('assets/images/teste.jpg')
+                                as ImageProvider,
                     radius: 25,
                   ),
                   const SizedBox(width: 10),
@@ -191,8 +199,10 @@ class HomeScreenState extends State<HomeScreen> {
                       return FutureBuilder<int>(
                         future: _countParticipantes(grupo['id']),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
                           }
                           final participantes = snapshot.data ?? 0;
                           return GestureDetector(
@@ -206,7 +216,8 @@ class HomeScreenState extends State<HomeScreen> {
                             },
                             child: CardModelo(
                               titulo: grupo["nomeGroup"] ?? "Sem título",
-                              descricao: grupo["descricaoGroup"] ?? "Sem descrição",
+                              descricao:
+                                  grupo["descricaoGroup"] ?? "Sem descrição",
                               participantes: participantes,
                               imagemUrl: grupo["fotoUrl"] ??
                                   "https://i.im.ge/2024/12/17/zATt3f.teste.jpeg",
