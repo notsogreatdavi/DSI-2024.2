@@ -13,25 +13,24 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> grupos = []; // Lista para os dados do Supabase
+  List<Map<String, dynamic>> grupos = [];
   List<Map<String, dynamic>> filteredGrupos = [];
-  Map<String, dynamic>? usuario; // Armazena os dados do usuário logado
+  Map<String, dynamic>? usuario;
 
   @override
   void initState() {
     super.initState();
-    _loadUsuario(); // Chama função para carregar usuário
-    _loadGrupos(); // Chama função para carregar grupos
+    _loadUsuario();
+    _loadGrupos();
     _searchController.addListener(_filterGroups);
   }
 
-  // Busca as informações do usuário logado no Supabase
   Future<void> _loadUsuario() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
       final response = await Supabase.instance.client
           .from('usuarios')
-          .select('nome, ativo') // Busca a coluna 'nome' e 'ativo'
+          .select('nome, ativo, fotoUrlPerfil')
           .eq('id', user.id)
           .single();
 
@@ -41,22 +40,17 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  
-  // Função para buscar os grupos no Supabase
   Future<void> _loadGrupos() async {
-    final response = await Supabase.instance.client
-        .from('grupo') // Nome da tabela
-        .select();
+    final response = await Supabase.instance.client.from('grupo').select();
 
     if (response.isNotEmpty) {
       setState(() {
         grupos = List<Map<String, dynamic>>.from(response);
-        filteredGrupos = grupos; // Inicializa a lista filtrada
+        filteredGrupos = grupos;
       });
     }
   }
 
-  // Função para contar a quantidade de usuários em cada grupo
   Future<int> _countParticipantes(int grupoId) async {
     final response = await Supabase.instance.client
         .from('grupo_usuarios')
@@ -93,22 +87,38 @@ class HomeScreenState extends State<HomeScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            const CircleAvatar(
-              backgroundImage: AssetImage('assets/images/teste.jpg'),
-              radius: 18,
+            GestureDetector(
+              onTap: () async {
+                // Navegar para a tela de perfil e aguardar o retorno
+                final isUpdated =
+                    await Navigator.pushNamed(context, '/profile');
+
+                // Verifica se houve atualização ao voltar da tela de perfil
+                if (isUpdated == true) {
+                  setState(() {
+                    // Recarrega as informações do usuário após alteração
+                    _loadUsuario();
+                  });
+                }
+              },
+              child: CircleAvatar(
+                backgroundImage:
+                    usuario != null && usuario!['fotoUrlPerfil'] != null
+                        ? NetworkImage(usuario!['fotoUrlPerfil'])
+                        : const AssetImage('assets/images/teste.jpg')
+                            as ImageProvider,
+                radius: 18,
+              ),
             ),
             const SizedBox(width: 5),
             IconButton(
               onPressed: () async {
                 final isUpdated = await Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => DeleteClassScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => DeleteClassScreen()),
                 );
 
                 if (isUpdated == true) {
-                  // Recarrega os grupos se houve alteração
                   _loadGrupos();
                 }
               },
@@ -130,8 +140,6 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 20),
-
-          // Card com as informações do usuário logado
           if (usuario != null)
             Container(
               alignment: Alignment.center,
@@ -143,10 +151,15 @@ class HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisAlignment:
+                    MainAxisAlignment.center, // Alinhamento centralizado
                 children: [
-                  const CircleAvatar(
-                    backgroundImage: AssetImage('assets/images/teste.jpg'),
+                  CircleAvatar(
+                    backgroundImage:
+                        usuario != null && usuario!['fotoUrlPerfil'] != null
+                            ? NetworkImage(usuario!['fotoUrlPerfil'])
+                            : const AssetImage('assets/images/teste.jpg')
+                                as ImageProvider,
                     radius: 25,
                   ),
                   const SizedBox(width: 10),
@@ -162,8 +175,6 @@ class HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-
-          // Barra de pesquisa
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: TextField(
@@ -179,8 +190,6 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 20),
-
-          // Lista de grupos
           Expanded(
             child: grupos.isEmpty
                 ? const Center(child: CircularProgressIndicator())
@@ -191,13 +200,14 @@ class HomeScreenState extends State<HomeScreen> {
                       return FutureBuilder<int>(
                         future: _countParticipantes(grupo['id']),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
                           }
                           final participantes = snapshot.data ?? 0;
                           return GestureDetector(
                             onTap: () {
-                              // Navega para a tela de atividades, passando os dados do grupo
                               Navigator.pushNamed(
                                 context,
                                 '/activities',
@@ -206,7 +216,8 @@ class HomeScreenState extends State<HomeScreen> {
                             },
                             child: CardModelo(
                               titulo: grupo["nomeGroup"] ?? "Sem título",
-                              descricao: grupo["descricaoGroup"] ?? "Sem descrição",
+                              descricao:
+                                  grupo["descricaoGroup"] ?? "Sem descrição",
                               participantes: participantes,
                               imagemUrl: grupo["fotoUrl"] ??
                                   "https://i.im.ge/2024/12/17/zATt3f.teste.jpeg",
@@ -237,18 +248,15 @@ class HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppColors.azulEscuro,
         shape: const CircleBorder(),
         onPressed: () async {
-          // Aguarda a criação do grupo e recebe o grupo como retorno
           final novoGrupo = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => RegisterClassScreen()),
           );
 
-          // Verifica se um novo grupo foi retornado
           if (novoGrupo != null) {
-            // Recarrega todos os grupos do banco para refletir o novo grupo
             await _loadGrupos();
             setState(() {
-              filteredGrupos = grupos; // Atualiza a lista exibida
+              filteredGrupos = grupos;
             });
           }
         },
@@ -261,7 +269,6 @@ class HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Modelo do Card reutilizável
 class CardModelo extends StatelessWidget {
   final String titulo;
   final String descricao;
