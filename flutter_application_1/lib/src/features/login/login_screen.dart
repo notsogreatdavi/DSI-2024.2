@@ -115,12 +115,11 @@ class _LoginPageState extends State<LoginPage> {
               ),
               SizedBox(height: 8),
 
-              // Texto "Esqueceu a senha?" centralizado
               Align(
                 alignment: Alignment.center,
                 child: TextButton(
                   onPressed: () {
-                    // Ação para "Esqueceu a senha?"
+                    Navigator.pushNamed(context, '/forgot_password'); // Navega para a tela de ForgotPassword
                   },
                   child: Text(
                     'Esqueceu a senha?',

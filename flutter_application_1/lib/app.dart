@@ -3,6 +3,7 @@ import 'src/features/splash/splash_screen.dart';
 import 'src/features/onboarding/onboarding_screen.dart';
 import 'src/features/ranking/ranking_screen.dart';
 import 'src/features/login/login_screen.dart';
+import 'src/features/login/forgot_password.dart';
 import 'src/features/cadastro/cadastro_screen.dart';
 import 'src/features/home/home_screen.dart';
 import 'src/features/activities/activities_screen.dart';
@@ -67,6 +68,7 @@ class App extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/map': (context) => MapScreen(),
         '/profile': (context) => const ProfileScreen(),
+        '/forgot_password': (context) => const ForgotPasswordPage(),
       },
     );
   }
