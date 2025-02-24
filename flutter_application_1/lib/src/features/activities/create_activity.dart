@@ -21,48 +21,143 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
   final MaskedTextController _horaController = MaskedTextController(mask: '00:00');
   String errorMessage = '';
 
-  Future<void> _createActivity() async {
-    if (!_formKey.currentState!.validate()) {
+Future<void> _createActivity() async {
+  if (!_formKey.currentState!.validate()) {
+    return;
+  }
+
+  setState(() {
+    errorMessage = '';
+  });
+
+  try {
+    final DateTime dateTime = DateFormat('dd/MM/yyyy HH:mm').parse(
+      '${_dataController.text} ${_horaController.text}',
+    );
+
+    final DateTime now = DateTime.now();
+    if (dateTime.isAfter(now)) {
+      setState(() {
+        errorMessage = 'A data da atividade não pode ser no futuro.';
+      });
       return;
     }
 
-    setState(() {
-      errorMessage = '';
-    });
+    final userId = Supabase.instance.client.auth.currentUser?.id;
 
-    try {
-      final DateTime dateTime = DateFormat('dd/MM/yyyy HH:mm').parse(
-        '${_dataController.text} ${_horaController.text}',
-      );
-
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-
-      if (userId == null) {
-        throw Exception('Usuário não está logado');
-      }
-
-      final fotoUrl = 'https://zvurnjqmcegutysaqrjs.supabase.co/storage/v1/object/public/imagensdsi//book-placeholder.png';
-
-      final response = await Supabase.instance.client.from('atividade').insert({
-        'titulo_ativi': _tituloController.text.trim(),
-        'descricao_ativi': _descricaoController.text.trim(),
-        'grupo_id': widget.grupo['id'],
-        'id_aluno': userId,
-        'fotoUrlAtivi': fotoUrl,
-        'created_at': dateTime.toIso8601String(),
-      }).select().single();
-
-      if (response.isEmpty) {
-        throw Exception('Erro ao criar atividade');
-      }
-
-      Navigator.pop(context, true);
-    } catch (e) {
-      setState(() {
-        errorMessage = 'Erro ao criar atividade: $e';
-      });
+    if (userId == null) {
+      throw Exception('Usuário não está logado');
     }
+
+    final fotoUrl = 'https://zvurnjqmcegutysaqrjs.supabase.co/storage/v1/object/public/imagensdsi//book-placeholder.png';
+
+    // Verifica o último dia ativo do usuário no grupo
+    final grupoUsuarioResponse = await Supabase.instance.client
+        .from('grupo_usuarios')
+        .select('sequencia, ultimo_dia_ativo')
+        .eq('grupo_id', widget.grupo['id'])
+        .eq('usuario_id', userId)
+        .maybeSingle(); // Usa maybeSingle para evitar exceções
+
+    if (grupoUsuarioResponse == null) {
+      throw Exception('Usuário não encontrado no grupo');
+    }
+
+    final Map<String, dynamic> grupoUsuario = grupoUsuarioResponse;
+    final String? ultimoDiaAtivoString = grupoUsuario['ultimo_dia_ativo'];
+    final DateTime? lastActiveDate = ultimoDiaAtivoString != null
+        ? DateTime.parse(ultimoDiaAtivoString)
+        : null; // Trata o caso em que ultimo_dia_ativo é null
+
+    final int sequenciaAtual = grupoUsuario['sequencia'] ?? 0; // Usa 0 como valor padrão se sequencia for null
+
+    // Busca o valor de 'ativo' da tabela 'usuarios'
+    final userResponse = await Supabase.instance.client
+        .from('usuarios')
+        .select('ativo')
+        .eq('id', userId)
+        .single();
+
+    final int ativoAtual = userResponse['ativo'];
+
+    // Verifica se já existe uma atividade no mesmo dia
+    final existingActivityResponse = await Supabase.instance.client
+        .from('atividade')
+        .select('id')
+        .eq('grupo_id', widget.grupo['id'])
+        .eq('id_aluno', userId)
+        .gte('created_at', DateFormat('yyyy-MM-dd').format(dateTime) + ' 00:00:00')
+        .lte('created_at', DateFormat('yyyy-MM-dd').format(dateTime) + ' 23:59:59')
+        .limit(1) // Limita o resultado a 1 linha
+        .maybeSingle(); // Usa maybeSingle para evitar exceções
+
+    // Cria a atividade
+    final activityResponse = await Supabase.instance.client.from('atividade').insert({
+      'titulo_ativi': _tituloController.text.trim(),
+      'descricao_ativi': _descricaoController.text.trim(),
+      'grupo_id': widget.grupo['id'],
+      'id_aluno': userId,
+      'fotoUrlAtivi': fotoUrl,
+      'created_at': dateTime.toIso8601String(),
+    }).select().single();
+
+    if (activityResponse.isEmpty) {
+      throw Exception('Erro ao criar atividade');
+    }
+
+    // Verifica se a nova atividade está no mesmo dia do último dia ativo
+    final bool isSameDayAsLastActive = lastActiveDate != null &&
+        DateFormat('yyyy-MM-dd').format(dateTime) ==
+            DateFormat('yyyy-MM-dd').format(lastActiveDate);
+
+    // Atualiza os dados do usuário e do grupo se a data da nova atividade for diferente de ultimo_dia_ativo
+    if (lastActiveDate == null || dateTime.isAfter(lastActiveDate)) {
+      // Caso 1: Não há último dia ativo OU a nova atividade é posterior ao último dia ativo
+      if (existingActivityResponse == null) {
+        // Não há outra atividade no mesmo dia, então incrementa os contadores
+        final int novoAtivo = ativoAtual + 1;
+        final int novaSequencia = sequenciaAtual + 1;
+
+        // Atualiza a tabela 'usuarios' (ativo)
+        await Supabase.instance.client.from('usuarios').update({
+          'ativo': novoAtivo,
+        }).eq('id', userId);
+
+        // Atualiza a tabela 'grupo_usuarios' (sequencia e ultimo_dia_ativo)
+        await Supabase.instance.client.from('grupo_usuarios').update({
+          'ultimo_dia_ativo': DateFormat('yyyy-MM-dd').format(dateTime),
+          'sequencia': novaSequencia,
+        }).eq('grupo_id', widget.grupo['id']).eq('usuario_id', userId);
+      }
+    } else if (dateTime.isBefore(lastActiveDate)) {
+      // Caso 2: A nova atividade é anterior ao último dia ativo
+      if (existingActivityResponse == null) {
+        // Não há outra atividade no mesmo dia, então incrementa os contadores
+        final int novoAtivo = ativoAtual + 1;
+        final int novaSequencia = sequenciaAtual + 1;
+
+        // Atualiza a tabela 'usuarios' (ativo)
+        await Supabase.instance.client.from('usuarios').update({
+          'ativo': novoAtivo,
+        }).eq('id', userId);
+
+        // Atualiza a tabela 'grupo_usuarios' (sequencia)
+        await Supabase.instance.client.from('grupo_usuarios').update({
+          'sequencia': novaSequencia,
+        }).eq('grupo_id', widget.grupo['id']).eq('usuario_id', userId);
+      }
+    } else if (isSameDayAsLastActive) {
+      // Caso 3: A nova atividade é no mesmo dia do último dia ativo
+      // Nada precisa ser feito com os contadores, pois o usuário já está ativo naquele dia
+    }
+
+    Navigator.pop(context, true);
+  } catch (e) {
+    setState(() {
+      errorMessage = 'Erro ao criar atividade: $e';
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {

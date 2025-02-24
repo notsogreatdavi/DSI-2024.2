@@ -32,13 +32,9 @@ class _UpdateDeleteActivityScreenState extends State<UpdateDeleteActivityScreen>
   }
 
   Future<void> _updateActivity() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      errorMessage = '';
-    });
+    setState(() => errorMessage = '');
 
     try {
       final DateTime dateTime = DateFormat('dd/MM/yyyy HH:mm').parse(
@@ -51,35 +47,176 @@ class _UpdateDeleteActivityScreenState extends State<UpdateDeleteActivityScreen>
         'created_at': dateTime.toIso8601String(),
       }).match({'id': widget.atividade['id']}).select().single();
 
-      if (response.isEmpty) {
-        throw Exception('Erro ao atualizar atividade');
-      }
+      if (response.isEmpty) throw Exception('Erro ao atualizar atividade');
 
       Navigator.pop(context, true); // Indica que a atividade foi atualizada
     } catch (e) {
-      setState(() {
-        errorMessage = 'Erro ao atualizar atividade: $e';
-      });
+      setState(() => errorMessage = 'Erro ao atualizar atividade: $e');
     }
   }
+  
+Future<void> _deleteActivity() async {
+  try {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('Usuário não está logado');
+    }
 
-  Future<void> _deleteActivity() async {
-    try {
+    final DateTime activityDate = DateTime.parse(widget.atividade['created_at']);
+
+    // Verifica se há outras atividades no mesmo dia (ignorando a hora)
+    final otherActivitiesResponse = await Supabase.instance.client
+        .from('atividade')
+        .select('id')
+        .eq('grupo_id', widget.atividade['grupo_id'])
+        .eq('id_aluno', userId)
+        .gte('created_at', DateFormat('yyyy-MM-dd').format(activityDate) + ' 00:00:00')
+        .lte('created_at', DateFormat('yyyy-MM-dd').format(activityDate) + ' 23:59:59')
+        .neq('id', widget.atividade['id'])
+        .limit(1) // Limita a 1 resultado para verificar a existência
+        .maybeSingle();
+
+    if (otherActivitiesResponse != null) {
+      // Há outras atividades no mesmo dia, apenas apaga a atividade
+      final confirm = await _confirmDeleteWithoutSequenceDecrease(
+        context,
+        'Tem certeza que deseja excluir esta atividade?',
+      );
+
+      if (confirm) {
+        await Supabase.instance.client.from('atividade').delete().match({'id': widget.atividade['id']});
+        Navigator.pop(context, true); // Indica que a atividade foi deletada
+      }
+      return;
+    }
+
+    // Se não há outras atividades, verifica o último dia ativo do usuário no grupo
+    final grupoUsuarioResponse = await Supabase.instance.client
+        .from('grupo_usuarios')
+        .select('ultimo_dia_ativo, sequencia')
+        .eq('grupo_id', widget.atividade['grupo_id'])
+        .eq('usuario_id', userId)
+        .maybeSingle();
+
+    if (grupoUsuarioResponse == null) {
+      throw Exception('Usuário não encontrado no grupo');
+    }
+
+    final Map<String, dynamic> grupoUsuario = grupoUsuarioResponse;
+    final DateTime lastActiveDate = DateTime.parse(grupoUsuario['ultimo_dia_ativo']);
+    final int sequenciaAtual = grupoUsuario['sequencia'];
+
+    // Busca o valor de 'ativo' da tabela 'usuarios'
+    final userResponse = await Supabase.instance.client
+        .from('usuarios')
+        .select('ativo')
+        .eq('id', userId)
+        .single();
+
+    final int ativoAtual = userResponse['ativo'];
+
+    // Pop-up de confirmação com diminuição de sequência
+    final confirm = await _confirmDeleteWithSequenceDecrease(
+      context,
+      'Tem certeza que deseja excluir esta atividade?',
+      'Sua sequência diminuirá.',
+    );
+
+    if (confirm) {
+      await _updateUserActivityData(userId, activityDate, lastActiveDate, ativoAtual, sequenciaAtual);
       await Supabase.instance.client.from('atividade').delete().match({'id': widget.atividade['id']});
       Navigator.pop(context, true); // Indica que a atividade foi deletada
-    } catch (e) {
-      setState(() {
-        errorMessage = 'Erro ao deletar atividade: $e';
-      });
+    }
+  } catch (e) {
+    setState(() {
+      errorMessage = 'Erro ao deletar atividade: $e';
+    });
+  }
+}
+
+Future<void> _updateUserActivityData(String userId, DateTime activityDate, DateTime lastActiveDate, int ativoAtual, int sequenciaAtual) async {
+  final int novoAtivo = ativoAtual - 1;
+  final int novaSequencia = sequenciaAtual - 1;
+
+  if (activityDate.isBefore(lastActiveDate)) {
+    // A atividade é menor que o último dia ativo
+    await Supabase.instance.client.from('usuarios').update({
+      'ativo': novoAtivo,
+    }).eq('id', userId);
+
+    await Supabase.instance.client.from('grupo_usuarios').update({
+      'sequencia': novaSequencia,
+    }).eq('grupo_id', widget.atividade['grupo_id']).eq('usuario_id', userId);
+  } else {
+    // A atividade é igual ao último dia ativo
+    await Supabase.instance.client.from('usuarios').update({
+      'ativo': novoAtivo,
+    }).eq('id', userId);
+
+    await Supabase.instance.client.from('grupo_usuarios').update({
+      'sequencia': novaSequencia,
+    }).eq('grupo_id', widget.atividade['grupo_id']).eq('usuario_id', userId);
+
+    // Atualiza o último dia ativo para a atividade mais recente
+    final recentActivityResponse = await Supabase.instance.client
+        .from('atividade')
+        .select('created_at')
+        .eq('grupo_id', widget.atividade['grupo_id'])
+        .eq('id_aluno', userId)
+        .lt('created_at', widget.atividade['created_at']) // Atividades anteriores
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (recentActivityResponse != null) {
+      final DateTime recentActivityDate = DateTime.parse(recentActivityResponse['created_at']);
+      await Supabase.instance.client.from('grupo_usuarios').update({
+        'ultimo_dia_ativo': DateFormat('yyyy-MM-dd').format(recentActivityDate),
+      }).eq('grupo_id', widget.atividade['grupo_id']).eq('usuario_id', userId);
     }
   }
+}
 
-  Future<bool> _confirmDelete(BuildContext context) async {
+  Future<bool> _confirmDeleteWithoutSequenceDecrease(BuildContext context, String message) async {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Confirmar Exclusão'),
-            content: const Text('Tem certeza que deseja excluir esta atividade?'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text(
+                  'Excluir',
+                  style: TextStyle(color: AppColors.laranja),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<bool> _confirmDeleteWithSequenceDecrease(BuildContext context, String message, String additionalMessage) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Confirmar Exclusão'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(message),
+                SizedBox(height: 8),
+                Text(
+                  additionalMessage,
+                  style: TextStyle(color: AppColors.laranja),
+                ),
+              ],
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -107,12 +244,7 @@ class _UpdateDeleteActivityScreenState extends State<UpdateDeleteActivityScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.delete, color: AppColors.laranja),
-            onPressed: () async {
-              final confirm = await _confirmDelete(context);
-              if (confirm) {
-                _deleteActivity();
-              }
-            },
+            onPressed: _deleteActivity,
           ),
         ],
       ),
@@ -239,8 +371,8 @@ class _UpdateDeleteActivityScreenState extends State<UpdateDeleteActivityScreen>
               SizedBox(height: 24),
               Center(
                 child: SizedBox(
-                  width: 210, 
-                  height: 45, 
+                  width: 210,
+                  height: 45,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.laranja,
