@@ -9,8 +9,9 @@ import 'src/features/activities/activities_screen.dart';
 import 'src/features/activities/create_activity.dart';
 import 'src/features/registers/update_group.dart';
 import 'src/features/pomodoro/pomodoro_screen.dart';
-import 'src/features/activities/update-delete_activity.dart'; 
+import 'src/features/activities/update-delete_activity.dart';
 import 'src/features/map/map_screen.dart';
+import 'src/features/profile/profile_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -43,7 +44,8 @@ class App extends StatelessWidget {
         } else if (settings.name == '/update-delete_activity') {
           final args = settings.arguments as Map<String, dynamic>;
           return MaterialPageRoute(
-            builder: (context) => UpdateDeleteActivityScreen(atividade: args['atividade']),
+            builder: (context) =>
+                UpdateDeleteActivityScreen(atividade: args['atividade']),
           );
         } else if (settings.name == '/pomodoro') {
           // ✅ Pegando os argumentos corretamente
@@ -64,6 +66,7 @@ class App extends StatelessWidget {
         '/cadastro': (context) => CadastroPage(),
         '/home': (context) => const HomeScreen(),
         '/map': (context) => MapScreen(),
+        '/profile': (context) => const ProfileScreen(),
       },
     );
   }
