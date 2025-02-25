@@ -41,11 +41,32 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadGrupos() async {
-    final response = await Supabase.instance.client.from('grupo').select();
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
 
-    if (response.isNotEmpty) {
+    // Busca todos os grupos
+    final responseGrupos =
+        await Supabase.instance.client.from('grupo').select();
+
+    if (responseGrupos.isNotEmpty) {
+      List<Map<String, dynamic>> gruposTemp =
+          List<Map<String, dynamic>>.from(responseGrupos);
+
+      // Para cada grupo, buscar a sequência do usuário logado
+      for (var grupo in gruposTemp) {
+        final responseSequencia = await Supabase.instance.client
+            .from('grupo_usuarios')
+            .select('sequencia')
+            .eq('grupo_id', grupo['id']) // Filtra pelo grupo
+            .eq('usuario_id', user.id) // Filtra pelo usuário logado
+            .maybeSingle(); // Retorna um único resultado ou null
+
+        grupo['sequencia'] =
+            responseSequencia != null ? responseSequencia['sequencia'] : 0;
+      }
+
       setState(() {
-        grupos = List<Map<String, dynamic>>.from(response);
+        grupos = gruposTemp;
         filteredGrupos = grupos;
       });
     }
@@ -221,7 +242,7 @@ class HomeScreenState extends State<HomeScreen> {
                               participantes: participantes,
                               imagemUrl: grupo["fotoUrl"] ??
                                   "https://i.im.ge/2024/12/17/zATt3f.teste.jpeg",
-                              diasAtivos: grupo["diasAtivos"] ?? 0,
+                              diasAtivos: grupo["sequencia"] ?? 0,
                               tituloStyle: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,

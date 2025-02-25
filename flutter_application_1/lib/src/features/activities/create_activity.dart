@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_masked_text2/flutter_masked_text2.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 import '../../common/constants/app_colors.dart';
 
 class CreateActivityScreen extends StatefulWidget {
@@ -17,147 +19,193 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _tituloController = TextEditingController();
   final TextEditingController _descricaoController = TextEditingController();
-  final MaskedTextController _dataController = MaskedTextController(mask: '00/00/0000');
-  final MaskedTextController _horaController = MaskedTextController(mask: '00:00');
+  final MaskedTextController _dataController =
+      MaskedTextController(mask: '00/00/0000');
+  final MaskedTextController _horaController =
+      MaskedTextController(mask: '00:00');
   String errorMessage = '';
 
-Future<void> _createActivity() async {
-  if (!_formKey.currentState!.validate()) {
-    return;
+  Uint8List? _imagemSelecionada;
+  //String? _imagemUrl;
+
+  final SupabaseClient _supabase = Supabase.instance.client;
+
+  Future<void> _selecionarImagem() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? imagem = await picker.pickImage(source: ImageSource.gallery);
+    if (imagem != null) {
+      final bytes = await imagem.readAsBytes();
+      setState(() {
+        _imagemSelecionada = bytes;
+      });
+    }
   }
 
-  setState(() {
-    errorMessage = '';
-  });
+  Future<String?> _fazerUploadImagem(Uint8List imagemBytes) async {
+    try {
+      final nomeArquivo =
+          'atividade_${DateTime.now().millisecondsSinceEpoch}.png';
+      await _supabase.storage.from('imagensdsi').uploadBinary(
+            nomeArquivo,
+            imagemBytes,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+          );
+      return _supabase.storage.from('imagensdsi').getPublicUrl(nomeArquivo);
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao enviar imagem: $error')),
+      );
+      return null;
+    }
+  }
 
-  try {
-    final DateTime dateTime = DateFormat('dd/MM/yyyy HH:mm').parse(
-      '${_dataController.text} ${_horaController.text}',
-    );
-
-    final DateTime now = DateTime.now();
-    if (dateTime.isAfter(now)) {
-      setState(() {
-        errorMessage = 'A data da atividade não pode ser no futuro.';
-      });
+  Future<void> _createActivity() async {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-
-    if (userId == null) {
-      throw Exception('Usuário não está logado');
-    }
-
-    final fotoUrl = 'https://zvurnjqmcegutysaqrjs.supabase.co/storage/v1/object/public/imagensdsi//book-placeholder.png';
-
-    // Verifica o último dia ativo do usuário no grupo
-    final grupoUsuarioResponse = await Supabase.instance.client
-        .from('grupo_usuarios')
-        .select('sequencia, ultimo_dia_ativo')
-        .eq('grupo_id', widget.grupo['id'])
-        .eq('usuario_id', userId)
-        .maybeSingle(); // Usa maybeSingle para evitar exceções
-
-    if (grupoUsuarioResponse == null) {
-      throw Exception('Usuário não encontrado no grupo');
-    }
-
-    final Map<String, dynamic> grupoUsuario = grupoUsuarioResponse;
-    final String? ultimoDiaAtivoString = grupoUsuario['ultimo_dia_ativo'];
-    final DateTime? lastActiveDate = ultimoDiaAtivoString != null
-        ? DateTime.parse(ultimoDiaAtivoString)
-        : null; // Trata o caso em que ultimo_dia_ativo é null
-
-    final int sequenciaAtual = grupoUsuario['sequencia'] ?? 0; // Usa 0 como valor padrão se sequencia for null
-
-    // Busca o valor de 'ativo' da tabela 'usuarios'
-    final userResponse = await Supabase.instance.client
-        .from('usuarios')
-        .select('ativo')
-        .eq('id', userId)
-        .single();
-
-    final int ativoAtual = userResponse['ativo'];
-
-    // Verifica se já existe uma atividade no mesmo dia
-    final existingActivityResponse = await Supabase.instance.client
-        .from('atividade')
-        .select('id')
-        .eq('grupo_id', widget.grupo['id'])
-        .eq('id_aluno', userId)
-        .gte('created_at', DateFormat('yyyy-MM-dd').format(dateTime) + ' 00:00:00')
-        .lte('created_at', DateFormat('yyyy-MM-dd').format(dateTime) + ' 23:59:59')
-        .limit(1) // Limita o resultado a 1 linha
-        .maybeSingle(); // Usa maybeSingle para evitar exceções
-
-    // Cria a atividade
-    final activityResponse = await Supabase.instance.client.from('atividade').insert({
-      'titulo_ativi': _tituloController.text.trim(),
-      'descricao_ativi': _descricaoController.text.trim(),
-      'grupo_id': widget.grupo['id'],
-      'id_aluno': userId,
-      'fotoUrlAtivi': fotoUrl,
-      'created_at': dateTime.toIso8601String(),
-    }).select().single();
-
-    if (activityResponse.isEmpty) {
-      throw Exception('Erro ao criar atividade');
-    }
-
-    // Verifica se a nova atividade está no mesmo dia do último dia ativo
-    final bool isSameDayAsLastActive = lastActiveDate != null &&
-        DateFormat('yyyy-MM-dd').format(dateTime) ==
-            DateFormat('yyyy-MM-dd').format(lastActiveDate);
-
-    // Atualiza os dados do usuário e do grupo se a data da nova atividade for diferente de ultimo_dia_ativo
-    if (lastActiveDate == null || dateTime.isAfter(lastActiveDate)) {
-      // Caso 1: Não há último dia ativo OU a nova atividade é posterior ao último dia ativo
-      if (existingActivityResponse == null) {
-        // Não há outra atividade no mesmo dia, então incrementa os contadores
-        final int novoAtivo = ativoAtual + 1;
-        final int novaSequencia = sequenciaAtual + 1;
-
-        // Atualiza a tabela 'usuarios' (ativo)
-        await Supabase.instance.client.from('usuarios').update({
-          'ativo': novoAtivo,
-        }).eq('id', userId);
-
-        // Atualiza a tabela 'grupo_usuarios' (sequencia e ultimo_dia_ativo)
-        await Supabase.instance.client.from('grupo_usuarios').update({
-          'ultimo_dia_ativo': DateFormat('yyyy-MM-dd').format(dateTime),
-          'sequencia': novaSequencia,
-        }).eq('grupo_id', widget.grupo['id']).eq('usuario_id', userId);
-      }
-    } else if (dateTime.isBefore(lastActiveDate)) {
-      // Caso 2: A nova atividade é anterior ao último dia ativo
-      if (existingActivityResponse == null) {
-        // Não há outra atividade no mesmo dia, então incrementa os contadores
-        final int novoAtivo = ativoAtual + 1;
-        final int novaSequencia = sequenciaAtual + 1;
-
-        // Atualiza a tabela 'usuarios' (ativo)
-        await Supabase.instance.client.from('usuarios').update({
-          'ativo': novoAtivo,
-        }).eq('id', userId);
-
-        // Atualiza a tabela 'grupo_usuarios' (sequencia)
-        await Supabase.instance.client.from('grupo_usuarios').update({
-          'sequencia': novaSequencia,
-        }).eq('grupo_id', widget.grupo['id']).eq('usuario_id', userId);
-      }
-    } else if (isSameDayAsLastActive) {
-      // Caso 3: A nova atividade é no mesmo dia do último dia ativo
-      // Nada precisa ser feito com os contadores, pois o usuário já está ativo naquele dia
-    }
-
-    Navigator.pop(context, true);
-  } catch (e) {
     setState(() {
-      errorMessage = 'Erro ao criar atividade: $e';
+      errorMessage = '';
     });
+
+    try {
+      final DateTime dateTime = DateFormat('dd/MM/yyyy HH:mm').parse(
+        '${_dataController.text} ${_horaController.text}',
+      );
+
+      final DateTime now = DateTime.now();
+      if (dateTime.isAfter(now)) {
+        setState(() {
+          errorMessage = 'A data da atividade não pode ser no futuro.';
+        });
+        return;
+      }
+
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('Usuário não está logado');
+      }
+
+      // Se uma imagem foi selecionada, faz o upload e obtém a URL
+      String? uploadedFotoUrl;
+      if (_imagemSelecionada != null) {
+        uploadedFotoUrl = await _fazerUploadImagem(_imagemSelecionada!);
+      }
+      // Usa a URL enviada ou, se não houver, o placeholder padrão
+      final String fotoUrl = uploadedFotoUrl ??
+          'https://zvurnjqmcegutysaqrjs.supabase.co/storage/v1/object/public/imagensdsi//book-placeholder.png';
+
+      // Verifica o último dia ativo do usuário no grupo
+      final grupoUsuarioResponse = await _supabase
+          .from('grupo_usuarios')
+          .select('sequencia, ultimo_dia_ativo')
+          .eq('grupo_id', widget.grupo['id'])
+          .eq('usuario_id', userId)
+          .maybeSingle();
+
+      if (grupoUsuarioResponse == null) {
+        throw Exception('Usuário não encontrado no grupo');
+      }
+
+      final Map<String, dynamic> grupoUsuario = grupoUsuarioResponse;
+      final String? ultimoDiaAtivoString = grupoUsuario['ultimo_dia_ativo'];
+      final DateTime? lastActiveDate = ultimoDiaAtivoString != null
+          ? DateTime.parse(ultimoDiaAtivoString)
+          : null;
+
+      final int sequenciaAtual = grupoUsuario['sequencia'] ?? 0;
+
+      // Busca o valor de 'ativo' da tabela 'usuarios'
+      final userResponse = await _supabase
+          .from('usuarios')
+          .select('ativo')
+          .eq('id', userId)
+          .single();
+      final int ativoAtual = userResponse['ativo'];
+
+      // Verifica se já existe uma atividade no mesmo dia
+      final existingActivityResponse = await _supabase
+          .from('atividade')
+          .select('id')
+          .eq('grupo_id', widget.grupo['id'])
+          .eq('id_aluno', userId)
+          .gte('created_at',
+              DateFormat('yyyy-MM-dd').format(dateTime) + ' 00:00:00')
+          .lte('created_at',
+              DateFormat('yyyy-MM-dd').format(dateTime) + ' 23:59:59')
+          .limit(1)
+          .maybeSingle();
+
+      // Cria a atividade, incluindo a URL da imagem selecionada (ou o placeholder)
+      final activityResponse = await _supabase
+          .from('atividade')
+          .insert({
+            'titulo_ativi': _tituloController.text.trim(),
+            'descricao_ativi': _descricaoController.text.trim(),
+            'grupo_id': widget.grupo['id'],
+            'id_aluno': userId,
+            'fotoUrlAtivi': fotoUrl,
+            'created_at': dateTime.toIso8601String(),
+          })
+          .select()
+          .single();
+
+      if (activityResponse.isEmpty) {
+        throw Exception('Erro ao criar atividade');
+      }
+
+      // Verifica se a nova atividade está no mesmo dia do último dia ativo
+      final bool isSameDayAsLastActive = lastActiveDate != null &&
+          DateFormat('yyyy-MM-dd').format(dateTime) ==
+              DateFormat('yyyy-MM-dd').format(lastActiveDate);
+
+      // Atualiza os dados do usuário e do grupo conforme a data da nova atividade
+      if (lastActiveDate == null || dateTime.isAfter(lastActiveDate)) {
+        if (existingActivityResponse == null) {
+          final int novoAtivo = ativoAtual + 1;
+          final int novaSequencia = sequenciaAtual + 1;
+
+          await _supabase.from('usuarios').update({
+            'ativo': novoAtivo,
+          }).eq('id', userId);
+
+          await _supabase
+              .from('grupo_usuarios')
+              .update({
+                'ultimo_dia_ativo': DateFormat('yyyy-MM-dd').format(dateTime),
+                'sequencia': novaSequencia,
+              })
+              .eq('grupo_id', widget.grupo['id'])
+              .eq('usuario_id', userId);
+        }
+      } else if (dateTime.isBefore(lastActiveDate)) {
+        if (existingActivityResponse == null) {
+          final int novoAtivo = ativoAtual + 1;
+          final int novaSequencia = sequenciaAtual + 1;
+
+          await _supabase.from('usuarios').update({
+            'ativo': novoAtivo,
+          }).eq('id', userId);
+
+          await _supabase
+              .from('grupo_usuarios')
+              .update({
+                'sequencia': novaSequencia,
+              })
+              .eq('grupo_id', widget.grupo['id'])
+              .eq('usuario_id', userId);
+        }
+      } else if (isSameDayAsLastActive) {
+        // Se a atividade for no mesmo dia, não é necessário atualizar os contadores
+      }
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Erro ao criar atividade: $e';
+      });
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +246,7 @@ Future<void> _createActivity() async {
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _descricaoController,
                 decoration: InputDecoration(
@@ -226,7 +274,7 @@ Future<void> _createActivity() async {
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _dataController,
                 decoration: InputDecoration(
@@ -253,7 +301,7 @@ Future<void> _createActivity() async {
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _horaController,
                 decoration: InputDecoration(
@@ -280,13 +328,51 @@ Future<void> _createActivity() async {
                   return null;
                 },
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               if (errorMessage.isNotEmpty)
                 Text(
                   errorMessage,
-                  style: TextStyle(color: Colors.red),
+                  style: const TextStyle(color: Colors.red),
                 ),
-              SizedBox(height: 24),
+              const SizedBox(height: 16),
+              // Exibição da imagem selecionada (se houver)
+              if (_imagemSelecionada != null)
+                Image.memory(
+                  _imagemSelecionada!,
+                  height: 150,
+                  fit: BoxFit.cover,
+                ),
+              const SizedBox(height: 10),
+              // Botão para selecionar a imagem
+              Center(
+                child: SizedBox(
+                  width: 200,
+                  height: 35,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.laranja,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        side: BorderSide(
+                          color: AppColors.azulEscuro,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    onPressed: _selecionarImagem,
+                    child: Text(
+                      'Selecionar Imagem',
+                      style: TextStyle(
+                        color: AppColors.branco,
+                        fontFamily: 'Montserrat',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
               Center(
                 child: SizedBox(
                   width: 210,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_masked_text2/flutter_masked_text2.dart';
+import 'package:image_picker/image_picker.dart'; // Para selecionar imagens
+import 'dart:typed_data'; // Para trabalhar com os bytes da imagem
 import '../../common/constants/app_colors.dart';
 
 class UpdateDeleteActivityScreen extends StatefulWidget {
@@ -10,16 +12,24 @@ class UpdateDeleteActivityScreen extends StatefulWidget {
   const UpdateDeleteActivityScreen({super.key, required this.atividade});
 
   @override
-  _UpdateDeleteActivityScreenState createState() => _UpdateDeleteActivityScreenState();
+  _UpdateDeleteActivityScreenState createState() =>
+      _UpdateDeleteActivityScreenState();
 }
 
-class _UpdateDeleteActivityScreenState extends State<UpdateDeleteActivityScreen> {
+class _UpdateDeleteActivityScreenState
+    extends State<UpdateDeleteActivityScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _tituloController = TextEditingController();
   final TextEditingController _descricaoController = TextEditingController();
-  final MaskedTextController _dataController = MaskedTextController(mask: '00/00/0000');
-  final MaskedTextController _horaController = MaskedTextController(mask: '00:00');
+  final MaskedTextController _dataController =
+      MaskedTextController(mask: '00/00/0000');
+  final MaskedTextController _horaController =
+      MaskedTextController(mask: '00:00');
   String errorMessage = '';
+
+  // Variáveis para manipulação da imagem da atividade
+  Uint8List? _imagemSelecionadaAtivi;
+  String? _imagemUrlAtivi;
 
   @override
   void initState() {
@@ -29,6 +39,8 @@ class _UpdateDeleteActivityScreenState extends State<UpdateDeleteActivityScreen>
     final DateTime dateTime = DateTime.parse(widget.atividade['created_at']);
     _dataController.text = DateFormat('dd/MM/yyyy').format(dateTime);
     _horaController.text = DateFormat('HH:mm').format(dateTime);
+    _imagemUrlAtivi =
+        widget.atividade['fotoUrlAtivi']; // Carrega a URL da foto da atividade
   }
 
   Future<void> _updateActivity() async {
@@ -41,11 +53,16 @@ class _UpdateDeleteActivityScreenState extends State<UpdateDeleteActivityScreen>
         '${_dataController.text} ${_horaController.text}',
       );
 
-      final response = await Supabase.instance.client.from('atividade').update({
-        'titulo_ativi': _tituloController.text.trim(),
-        'descricao_ativi': _descricaoController.text.trim(),
-        'created_at': dateTime.toIso8601String(),
-      }).match({'id': widget.atividade['id']}).select().single();
+      final response = await Supabase.instance.client
+          .from('atividade')
+          .update({
+            'titulo_ativi': _tituloController.text.trim(),
+            'descricao_ativi': _descricaoController.text.trim(),
+            'created_at': dateTime.toIso8601String(),
+          })
+          .match({'id': widget.atividade['id']})
+          .select()
+          .single();
 
       if (response.isEmpty) throw Exception('Erro ao atualizar atividade');
 
@@ -54,130 +71,158 @@ class _UpdateDeleteActivityScreenState extends State<UpdateDeleteActivityScreen>
       setState(() => errorMessage = 'Erro ao atualizar atividade: $e');
     }
   }
-  
-Future<void> _deleteActivity() async {
-  try {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) {
-      throw Exception('Usuário não está logado');
-    }
 
-    final DateTime activityDate = DateTime.parse(widget.atividade['created_at']);
+  Future<void> _deleteActivity() async {
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('Usuário não está logado');
+      }
 
-    // Verifica se há outras atividades no mesmo dia (ignorando a hora)
-    final otherActivitiesResponse = await Supabase.instance.client
-        .from('atividade')
-        .select('id')
-        .eq('grupo_id', widget.atividade['grupo_id'])
-        .eq('id_aluno', userId)
-        .gte('created_at', DateFormat('yyyy-MM-dd').format(activityDate) + ' 00:00:00')
-        .lte('created_at', DateFormat('yyyy-MM-dd').format(activityDate) + ' 23:59:59')
-        .neq('id', widget.atividade['id'])
-        .limit(1) // Limita a 1 resultado para verificar a existência
-        .maybeSingle();
+      final DateTime activityDate =
+          DateTime.parse(widget.atividade['created_at']);
 
-    if (otherActivitiesResponse != null) {
-      // Há outras atividades no mesmo dia, apenas apaga a atividade
-      final confirm = await _confirmDeleteWithoutSequenceDecrease(
+      // Verifica se há outras atividades no mesmo dia (ignorando a hora)
+      final otherActivitiesResponse = await Supabase.instance.client
+          .from('atividade')
+          .select('id')
+          .eq('grupo_id', widget.atividade['grupo_id'])
+          .eq('id_aluno', userId)
+          .gte('created_at',
+              DateFormat('yyyy-MM-dd').format(activityDate) + ' 00:00:00')
+          .lte('created_at',
+              DateFormat('yyyy-MM-dd').format(activityDate) + ' 23:59:59')
+          .neq('id', widget.atividade['id'])
+          .limit(1) // Limita a 1 resultado para verificar a existência
+          .maybeSingle();
+
+      if (otherActivitiesResponse != null) {
+        // Há outras atividades no mesmo dia, apenas apaga a atividade
+        final confirm = await _confirmDeleteWithoutSequenceDecrease(
+          context,
+          'Tem certeza que deseja excluir esta atividade?',
+        );
+
+        if (confirm) {
+          await Supabase.instance.client
+              .from('atividade')
+              .delete()
+              .match({'id': widget.atividade['id']});
+          Navigator.pop(context, true); // Indica que a atividade foi deletada
+        }
+        return;
+      }
+
+      // Se não há outras atividades, verifica o último dia ativo do usuário no grupo
+      final grupoUsuarioResponse = await Supabase.instance.client
+          .from('grupo_usuarios')
+          .select('ultimo_dia_ativo, sequencia')
+          .eq('grupo_id', widget.atividade['grupo_id'])
+          .eq('usuario_id', userId)
+          .maybeSingle();
+
+      if (grupoUsuarioResponse == null) {
+        throw Exception('Usuário não encontrado no grupo');
+      }
+
+      final Map<String, dynamic> grupoUsuario = grupoUsuarioResponse;
+      final DateTime lastActiveDate =
+          DateTime.parse(grupoUsuario['ultimo_dia_ativo']);
+      final int sequenciaAtual = grupoUsuario['sequencia'];
+
+      // Busca o valor de 'ativo' da tabela 'usuarios'
+      final userResponse = await Supabase.instance.client
+          .from('usuarios')
+          .select('ativo')
+          .eq('id', userId)
+          .single();
+
+      final int ativoAtual = userResponse['ativo'];
+
+      // Pop-up de confirmação com diminuição de sequência
+      final confirm = await _confirmDeleteWithSequenceDecrease(
         context,
         'Tem certeza que deseja excluir esta atividade?',
+        'Sua sequência diminuirá.',
       );
 
       if (confirm) {
-        await Supabase.instance.client.from('atividade').delete().match({'id': widget.atividade['id']});
+        await _updateUserActivityData(
+            userId, activityDate, lastActiveDate, ativoAtual, sequenciaAtual);
+        await Supabase.instance.client
+            .from('atividade')
+            .delete()
+            .match({'id': widget.atividade['id']});
         Navigator.pop(context, true); // Indica que a atividade foi deletada
       }
-      return;
-    }
-
-    // Se não há outras atividades, verifica o último dia ativo do usuário no grupo
-    final grupoUsuarioResponse = await Supabase.instance.client
-        .from('grupo_usuarios')
-        .select('ultimo_dia_ativo, sequencia')
-        .eq('grupo_id', widget.atividade['grupo_id'])
-        .eq('usuario_id', userId)
-        .maybeSingle();
-
-    if (grupoUsuarioResponse == null) {
-      throw Exception('Usuário não encontrado no grupo');
-    }
-
-    final Map<String, dynamic> grupoUsuario = grupoUsuarioResponse;
-    final DateTime lastActiveDate = DateTime.parse(grupoUsuario['ultimo_dia_ativo']);
-    final int sequenciaAtual = grupoUsuario['sequencia'];
-
-    // Busca o valor de 'ativo' da tabela 'usuarios'
-    final userResponse = await Supabase.instance.client
-        .from('usuarios')
-        .select('ativo')
-        .eq('id', userId)
-        .single();
-
-    final int ativoAtual = userResponse['ativo'];
-
-    // Pop-up de confirmação com diminuição de sequência
-    final confirm = await _confirmDeleteWithSequenceDecrease(
-      context,
-      'Tem certeza que deseja excluir esta atividade?',
-      'Sua sequência diminuirá.',
-    );
-
-    if (confirm) {
-      await _updateUserActivityData(userId, activityDate, lastActiveDate, ativoAtual, sequenciaAtual);
-      await Supabase.instance.client.from('atividade').delete().match({'id': widget.atividade['id']});
-      Navigator.pop(context, true); // Indica que a atividade foi deletada
-    }
-  } catch (e) {
-    setState(() {
-      errorMessage = 'Erro ao deletar atividade: $e';
-    });
-  }
-}
-
-Future<void> _updateUserActivityData(String userId, DateTime activityDate, DateTime lastActiveDate, int ativoAtual, int sequenciaAtual) async {
-  final int novoAtivo = ativoAtual - 1;
-  final int novaSequencia = sequenciaAtual - 1;
-
-  if (activityDate.isBefore(lastActiveDate)) {
-    // A atividade é menor que o último dia ativo
-    await Supabase.instance.client.from('usuarios').update({
-      'ativo': novoAtivo,
-    }).eq('id', userId);
-
-    await Supabase.instance.client.from('grupo_usuarios').update({
-      'sequencia': novaSequencia,
-    }).eq('grupo_id', widget.atividade['grupo_id']).eq('usuario_id', userId);
-  } else {
-    // A atividade é igual ao último dia ativo
-    await Supabase.instance.client.from('usuarios').update({
-      'ativo': novoAtivo,
-    }).eq('id', userId);
-
-    await Supabase.instance.client.from('grupo_usuarios').update({
-      'sequencia': novaSequencia,
-    }).eq('grupo_id', widget.atividade['grupo_id']).eq('usuario_id', userId);
-
-    // Atualiza o último dia ativo para a atividade mais recente
-    final recentActivityResponse = await Supabase.instance.client
-        .from('atividade')
-        .select('created_at')
-        .eq('grupo_id', widget.atividade['grupo_id'])
-        .eq('id_aluno', userId)
-        .lt('created_at', widget.atividade['created_at']) // Atividades anteriores
-        .order('created_at', ascending: false)
-        .limit(1)
-        .maybeSingle();
-
-    if (recentActivityResponse != null) {
-      final DateTime recentActivityDate = DateTime.parse(recentActivityResponse['created_at']);
-      await Supabase.instance.client.from('grupo_usuarios').update({
-        'ultimo_dia_ativo': DateFormat('yyyy-MM-dd').format(recentActivityDate),
-      }).eq('grupo_id', widget.atividade['grupo_id']).eq('usuario_id', userId);
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Erro ao deletar atividade: $e';
+      });
     }
   }
-}
 
-  Future<bool> _confirmDeleteWithoutSequenceDecrease(BuildContext context, String message) async {
+  Future<void> _updateUserActivityData(String userId, DateTime activityDate,
+      DateTime lastActiveDate, int ativoAtual, int sequenciaAtual) async {
+    final int novoAtivo = ativoAtual - 1;
+    final int novaSequencia = sequenciaAtual - 1;
+
+    if (activityDate.isBefore(lastActiveDate)) {
+      // A atividade é menor que o último dia ativo
+      await Supabase.instance.client.from('usuarios').update({
+        'ativo': novoAtivo,
+      }).eq('id', userId);
+
+      await Supabase.instance.client
+          .from('grupo_usuarios')
+          .update({
+            'sequencia': novaSequencia,
+          })
+          .eq('grupo_id', widget.atividade['grupo_id'])
+          .eq('usuario_id', userId);
+    } else {
+      // A atividade é igual ao último dia ativo
+      await Supabase.instance.client.from('usuarios').update({
+        'ativo': novoAtivo,
+      }).eq('id', userId);
+
+      await Supabase.instance.client
+          .from('grupo_usuarios')
+          .update({
+            'sequencia': novaSequencia,
+          })
+          .eq('grupo_id', widget.atividade['grupo_id'])
+          .eq('usuario_id', userId);
+
+      // Atualiza o último dia ativo para a atividade mais recente
+      final recentActivityResponse = await Supabase.instance.client
+          .from('atividade')
+          .select('created_at')
+          .eq('grupo_id', widget.atividade['grupo_id'])
+          .eq('id_aluno', userId)
+          .lt('created_at',
+              widget.atividade['created_at']) // Atividades anteriores
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (recentActivityResponse != null) {
+        final DateTime recentActivityDate =
+            DateTime.parse(recentActivityResponse['created_at']);
+        await Supabase.instance.client
+            .from('grupo_usuarios')
+            .update({
+              'ultimo_dia_ativo':
+                  DateFormat('yyyy-MM-dd').format(recentActivityDate),
+            })
+            .eq('grupo_id', widget.atividade['grupo_id'])
+            .eq('usuario_id', userId);
+      }
+    }
+  }
+
+  Future<bool> _confirmDeleteWithoutSequenceDecrease(
+      BuildContext context, String message) async {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -201,7 +246,8 @@ Future<void> _updateUserActivityData(String userId, DateTime activityDate, DateT
         false;
   }
 
-  Future<bool> _confirmDeleteWithSequenceDecrease(BuildContext context, String message, String additionalMessage) async {
+  Future<bool> _confirmDeleteWithSequenceDecrease(
+      BuildContext context, String message, String additionalMessage) async {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -210,7 +256,7 @@ Future<void> _updateUserActivityData(String userId, DateTime activityDate, DateT
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(message),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   additionalMessage,
                   style: TextStyle(color: AppColors.laranja),
@@ -235,6 +281,48 @@ Future<void> _updateUserActivityData(String userId, DateTime activityDate, DateT
         false;
   }
 
+  Future<void> _alterarFotoAtividade() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? imagem = await picker.pickImage(source: ImageSource.gallery);
+
+    if (imagem != null) {
+      final bytes = await imagem.readAsBytes();
+      setState(() {
+        _imagemSelecionadaAtivi = bytes;
+      });
+
+      final String? imagemUrl =
+          await _fazerUploadImagemAtividade(_imagemSelecionadaAtivi!);
+
+      if (imagemUrl != null) {
+        await Supabase.instance.client.from('atividade').update(
+            {'fotoUrlAtivi': imagemUrl}).match({'id': widget.atividade['id']});
+
+        setState(() {
+          _imagemUrlAtivi = imagemUrl;
+        });
+      }
+    }
+  }
+
+  Future<String?> _fazerUploadImagemAtividade(Uint8List imagemBytes) async {
+    try {
+      final nomeArquivo =
+          'atividade_${DateTime.now().millisecondsSinceEpoch}.png';
+      await Supabase.instance.client.storage.from('imagensdsi').uploadBinary(
+            nomeArquivo,
+            imagemBytes,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+          );
+      return Supabase.instance.client.storage
+          .from('imagensdsi')
+          .getPublicUrl(nomeArquivo);
+    } catch (error) {
+      // Aqui você pode adicionar feedback para o usuário, se desejar
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -254,6 +342,56 @@ Future<void> _updateUserActivityData(String userId, DateTime activityDate, DateT
           key: _formKey,
           child: ListView(
             children: [
+              // Exibição da imagem da atividade
+              _imagemSelecionadaAtivi != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.memory(
+                        _imagemSelecionadaAtivi!,
+                        width: double.infinity,
+                        height: 200,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : _imagemUrlAtivi != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            _imagemUrlAtivi!,
+                            width: double.infinity,
+                            height: 200,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : const SizedBox(),
+              const SizedBox(height: 16),
+              // Botão para alterar a foto da atividade
+              ElevatedButton(
+                onPressed: _alterarFotoAtividade,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.laranja,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    side: BorderSide(
+                      color: AppColors.azulEscuro,
+                      width: 2,
+                    ),
+                  ),
+                ),
+                child: const Text(
+                  'Alterar Foto da Atividade',
+                  style: TextStyle(
+                    color: AppColors.branco,
+                    fontFamily: 'Montserrat',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Campos para título, descrição, data e hora
               TextFormField(
                 controller: _tituloController,
                 decoration: InputDecoration(
@@ -280,7 +418,7 @@ Future<void> _updateUserActivityData(String userId, DateTime activityDate, DateT
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _descricaoController,
                 decoration: InputDecoration(
@@ -308,7 +446,7 @@ Future<void> _updateUserActivityData(String userId, DateTime activityDate, DateT
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _dataController,
                 decoration: InputDecoration(
@@ -335,7 +473,7 @@ Future<void> _updateUserActivityData(String userId, DateTime activityDate, DateT
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _horaController,
                 decoration: InputDecoration(
@@ -362,13 +500,13 @@ Future<void> _updateUserActivityData(String userId, DateTime activityDate, DateT
                   return null;
                 },
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               if (errorMessage.isNotEmpty)
                 Text(
                   errorMessage,
                   style: TextStyle(color: AppColors.laranja),
                 ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               Center(
                 child: SizedBox(
                   width: 210,
@@ -385,7 +523,7 @@ Future<void> _updateUserActivityData(String userId, DateTime activityDate, DateT
                       ),
                     ),
                     onPressed: _updateActivity,
-                    child: Text(
+                    child: const Text(
                       'Atualizar Atividade',
                       style: TextStyle(
                         color: AppColors.branco,
