@@ -20,10 +20,12 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
   List<Map<String, dynamic>> atividades = [];
   bool isLoading = true;
   String errorMessage = '';
+  String? userProfileImageUrl;
   Map<String, dynamic>? topUser;
   Map<String, dynamic>? loggedInUser;
   int? loggedInUserRank;
   String filtro = '';
+  final supabase = Supabase.instance.client;
 
   @override
   void initState() {
@@ -31,7 +33,29 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     grupo = widget.grupo;
     _loadAtividades();
     _loadTopUserAndLoggedInUser();
+    _loadUserData();
   }
+
+Future<void> _loadUserData() async {
+  try {
+    final user = supabase.auth.currentUser; // Use a variável de classe
+    if (user != null) {
+      final userData = await supabase
+          .from('usuarios')
+          .select('fotoUrlPerfil')
+          .eq('id', user.id)
+          .maybeSingle();
+      
+      if (userData != null && mounted) {
+        setState(() {
+          userProfileImageUrl = userData['fotoUrlPerfil'];
+        });
+      }
+    }
+  } catch (e) {
+    print('Erro ao carregar dados do usuário: $e');
+  }
+}
 
   Future<void> _loadAtividades() async {
     setState(() {
@@ -295,6 +319,7 @@ void _onItemTapped(int index) {
     return Scaffold(
       appBar: CustomNavigationBar(
         title: '',
+        profileImageUrl: userProfileImageUrl,
         onBackButtonPressed: () {
           Navigator.pushNamed(context, '/home');
         },
@@ -312,10 +337,16 @@ void _onItemTapped(int index) {
             });
           }
         },
-        onProfileButtonPressed: () {
-          // Botão para a tela de perfil
+        onProfileButtonPressed: () async {
+          // Navega para a tela de perfil e aguarda o retorno
+          final result = await Navigator.pushNamed(context, '/profile');
+          
+          // Se houve atualização, recarrega os dados do usuário
+          if (result == true) {
+            _loadUserData();
+          }
         },
-      ),
+),
       backgroundColor: AppColors.branco,
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
