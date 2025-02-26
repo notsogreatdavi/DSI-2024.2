@@ -121,6 +121,7 @@ void _onItemTapped(int index) {
           context,
           '/pomodoro',
           arguments: {
+            'grupo': grupo,
             'usuarioId': usuarioId,
             'grupoId': grupo['id'], // Pegando o ID do grupo atual
           },
@@ -135,7 +136,7 @@ void _onItemTapped(int index) {
       Navigator.pushNamed(context, '/ranking', arguments: {'grupo': grupo});
     }
      else if (index == 3) { 
-      Navigator.pushNamed(context, '/map');
+      Navigator.pushNamed(context, '/map', arguments: {'grupo': grupo});
      }
   });
 }

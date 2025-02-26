@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/constants/app_colors.dart';
-import '../registers/register_class.dart';
+//import '../registers/register_class.dart';
 import '../registers/delete_group.dart';
+import '../intermediary/tela_intermediaria.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -41,11 +42,46 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadGrupos() async {
-    final response = await Supabase.instance.client.from('grupo').select();
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
 
-    if (response.isNotEmpty) {
+    // Busca todos os grupos
+    final responseGrupos = await Supabase.instance.client
+        .from('grupo_usuarios')
+        .select('grupo_id')
+        .eq('usuario_id', user.id);
+
+    if (responseGrupos.isNotEmpty) {
+      List<Map<String, dynamic>> gruposTemp = [];
+
+      for (var grupoUsuario in responseGrupos) {
+        final grupoId = grupoUsuario['grupo_id'];
+
+        final responseGrupo = await Supabase.instance.client
+            .from('grupo')
+            .select()
+            .eq('id', grupoId)
+            .single();
+
+        if (responseGrupo.isNotEmpty) {
+          gruposTemp.add(responseGrupo);
+        }
+      }
+      // Para cada grupo, buscar a sequência do usuário logado
+      for (var grupo in gruposTemp) {
+        final responseSequencia = await Supabase.instance.client
+            .from('grupo_usuarios')
+            .select('sequencia')
+            .eq('grupo_id', grupo['id']) // Filtra pelo grupo
+            .eq('usuario_id', user.id) // Filtra pelo usuário logado
+            .maybeSingle(); // Retorna um único resultado ou null
+
+        grupo['sequencia'] =
+            responseSequencia != null ? responseSequencia['sequencia'] : 0;
+      }
+
       setState(() {
-        grupos = List<Map<String, dynamic>>.from(response);
+        grupos = gruposTemp;
         filteredGrupos = grupos;
       });
     }
@@ -192,7 +228,12 @@ class HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 20),
           Expanded(
             child: grupos.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                    child: Text(
+                      "Nenhum grupo encontrado",
+                      style: TextStyle(fontSize: 18, color: Colors.black),
+                    ),
+                  )
                 : ListView.builder(
                     itemCount: filteredGrupos.length,
                     itemBuilder: (context, index) {
@@ -221,7 +262,7 @@ class HomeScreenState extends State<HomeScreen> {
                               participantes: participantes,
                               imagemUrl: grupo["fotoUrl"] ??
                                   "https://i.im.ge/2024/12/17/zATt3f.teste.jpeg",
-                              diasAtivos: grupo["diasAtivos"] ?? 0,
+                              diasAtivos: grupo["sequencia"] ?? 0,
                               tituloStyle: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
@@ -248,12 +289,15 @@ class HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppColors.azulEscuro,
         shape: const CircleBorder(),
         onPressed: () async {
-          final novoGrupo = await Navigator.push(
+          // Vai para a tela que pergunta o que o usuário quer fazer
+          final resultado = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => RegisterClassScreen()),
+            MaterialPageRoute(
+                builder: (context) => const ChooseGroupOptionScreen()),
           );
 
-          if (novoGrupo != null) {
+          // Se a tela de opção retornou true, significa que algo foi criado ou alterado
+          if (resultado == true) {
             await _loadGrupos();
             setState(() {
               filteredGrupos = grupos;
