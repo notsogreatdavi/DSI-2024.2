@@ -25,34 +25,37 @@ class _MapScreenState extends State<MapScreen> {
     grupo = widget.grupo;
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      if (index == 0) {
-        final supabase = Supabase.instance.client;
-        final usuarioId = supabase.auth.currentUser?.id;
+void _onItemTapped(int index) {
+  setState(() {
+    _selectedIndex = index;
+    if (index == 0) {
+      // Obtendo o ID do usuário logado
+      final supabase = Supabase.instance.client;
+      final usuarioId = supabase.auth.currentUser?.id;
 
-        if (usuarioId != null) {
-          Navigator.pushNamed(
-            context,
-            '/pomodoro',
-            arguments: {
-              'usuarioId': usuarioId,
-              'grupoId': grupo['id'],
-            },
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Erro: usuário não autenticado!')),
-          );
-        }
-      } else if (index == 2) {
-        Navigator.pushNamed(context, '/ranking', arguments: {'grupo': grupo});
-      } else if (index == 3) {
-        Navigator.pushNamed(context, '/map');
+      if (usuarioId != null) {
+        Navigator.pushNamed(
+          context,
+          '/pomodoro',
+          arguments: {
+            'usuarioId': usuarioId,
+            'grupoId': grupo['id'], // Pegando o ID do grupo atual
+          },
+        );
+      } else {
+        // Tratar erro caso o usuário não esteja autenticado
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro: usuário não autenticado!')),
+        );
       }
-    });
-  }
+    } else if (index == 2) {
+      Navigator.pushNamed(context, '/ranking', arguments: {'grupo': grupo});
+    }
+     else if (index == 1) { 
+      Navigator.pushNamed(context, '/activities', arguments: {'grupo': grupo});
+     }
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -108,3 +111,4 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 }
+

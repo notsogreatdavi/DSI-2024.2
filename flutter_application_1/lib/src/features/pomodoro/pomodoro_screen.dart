@@ -52,6 +52,7 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
     setState(() => _isRunning = false);
     _timer?.cancel();
   }
+  
 
   void _resetTimer() {
     _stopTimer();
