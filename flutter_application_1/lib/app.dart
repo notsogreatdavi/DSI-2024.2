@@ -52,6 +52,7 @@ class App extends StatelessWidget {
           final args = settings.arguments as Map<String, dynamic>;
           return MaterialPageRoute(
             builder: (context) => PomodoroScreen(
+              grupo: args['grupo'],
               usuarioId: args['usuarioId'],
               grupoId: args['grupoId'],
             ),
