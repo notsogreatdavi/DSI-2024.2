@@ -2,12 +2,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
+import '../../common/constants/app_colors.dart';
+import '../../common/widgets/custom_navigation_bar.dart';
+import '../../common/widgets/custom_bottom_navigation_bar.dart';
 
 class PomodoroScreen extends StatefulWidget {
+  final Map<String, dynamic> grupo;
   final String usuarioId;
   final int grupoId;
 
-  const PomodoroScreen({super.key, required this.usuarioId, required this.grupoId});
+  const PomodoroScreen({super.key, required this.usuarioId, required this.grupoId, required this.grupo});
 
   @override
   _PomodoroScreenState createState() => _PomodoroScreenState();
@@ -16,11 +21,13 @@ class PomodoroScreen extends StatefulWidget {
 class _PomodoroScreenState extends State<PomodoroScreen> {
   final supabase = Supabase.instance.client;
   int _timeInSeconds = 25 * 60;
+  int _originalTimeInSeconds = 25 * 60; // Adicionando uma variável para armazenar o tempo original
   bool _isRunning = false;
   Timer? _timer;
   late Future<List<Map<String, dynamic>>> _sessionsFuture;
 
   final TextEditingController _timeController = TextEditingController();
+  int _selectedIndex = 0; // Índice da aba do Pomodoro
 
   @override
   void initState() {
@@ -42,8 +49,9 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
         setState(() => _timeInSeconds--);
       } else {
         _stopTimer();
-        _saveSession();
-        _showCompletionDialog();
+        _saveSession().then((_) {
+          _showCompletionDialog();
+        });
       }
     });
   }
@@ -52,23 +60,27 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
     setState(() => _isRunning = false);
     _timer?.cancel();
   }
-  
 
   void _resetTimer() {
     _stopTimer();
-    setState(() => _timeInSeconds = 25 * 60);
+    setState(() {
+      _timeInSeconds = _originalTimeInSeconds;
+    });
   }
 
   void _updateTime() {
     int newTime = int.tryParse(_timeController.text) ?? 25;
-    setState(() => _timeInSeconds = newTime * 60);
+    setState(() {
+      _timeInSeconds = newTime * 60;
+      _originalTimeInSeconds = _timeInSeconds; // Atualizando o tempo original
+    });
   }
 
   Future<void> _saveSession() async {
     await supabase.from('pomodoro_session').insert({
       'usuario_id': widget.usuarioId,
       'grupo_id': widget.grupoId,
-      'duracao': (_timeInSeconds ~/ 60).abs(), // Garante que a duração não seja negativa
+      'duracao': (_originalTimeInSeconds ~/ 60).abs(), // Usando o tempo original
       'concluido': true,
       'created_at': DateTime.now().toIso8601String(),
     });
@@ -106,7 +118,7 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _resetTimer(); // Reseta o tempo após o usuário fechar o alerta
+              _resetTimer();
             },
             child: const Text("OK"),
           ),
@@ -121,31 +133,48 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
     return '$minutes:${secs.toString().padLeft(2, '0')}';
   }
 
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    if (index == 1) {
+      Navigator.pushNamed(context, '/activities', arguments: {'grupo': widget.grupo});
+    } else if (index == 2) {
+      Navigator.pushNamed(context, '/ranking', arguments: {'grupo': widget.grupo});
+    } else if (index == 3) {
+      Navigator.pushNamed(context, '/map', arguments: {'grupo': widget.grupo});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-          'Pomodoro Timer',
-          style: GoogleFonts.lato(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+      appBar: CustomNavigationBar(
+        title: 'Pomodoro',
+        onBackButtonPressed: () => Navigator.pushNamed(context, '/home'),
+        onMoreButtonPressed: () {},
+        onProfileButtonPressed: () {},
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildTimerDisplay(),
-          const SizedBox(height: 20),
-          _buildTimeInput(),
-          const SizedBox(height: 20),
-          _buildControls(),
-          const SizedBox(height: 30),
-          _buildSessionHistory(),
-        ],
+      backgroundColor: AppColors.cinzaClaro,
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildTimerDisplay(),
+            const SizedBox(height: 20),
+            _buildTimeInput(),
+            const SizedBox(height: 20),
+            _buildControls(),
+            const SizedBox(height: 30),
+            _buildSessionHistory(),
+          ],
+        ),
+      ),
+      bottomNavigationBar: CustomBottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
       ),
     );
   }
@@ -157,12 +186,12 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
         height: 200,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.red, width: 5),
+          border: Border.all(color: AppColors.laranja, width: 5),
         ),
         child: Center(
           child: Text(
             _formatTime(_timeInSeconds),
-            style: GoogleFonts.lato(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.black),
+            style: GoogleFonts.lato(fontSize: 40, fontWeight: FontWeight.bold, color: AppColors.azulEscuro),
           ),
         ),
       ),
@@ -178,16 +207,18 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
           child: TextField(
             controller: _timeController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Minutos',
               border: OutlineInputBorder(),
+              labelStyle: TextStyle(color: AppColors.azulEscuro),
             ),
           ),
         ),
         const SizedBox(width: 10),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.azulEscuro),
           onPressed: _updateTime,
-          child: const Text('Definir'),
+          child: const Text('Definir', style: TextStyle(color: AppColors.cinzaClaro)),
         ),
       ],
     );
@@ -197,18 +228,18 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _buildButton(Icons.play_arrow, 'Iniciar', _startTimer, Colors.green),
+        _buildButton(Icons.play_arrow, 'Iniciar', _startTimer, AppColors.azulEscuro),
         const SizedBox(width: 20),
-        _buildButton(Icons.pause, 'Pausar', _stopTimer, Colors.orange),
+        _buildButton(Icons.pause, 'Pausar', _stopTimer, AppColors.laranja),
         const SizedBox(width: 20),
-        _buildButton(Icons.refresh, 'Resetar', _resetTimer, Colors.red),
+        _buildButton(Icons.refresh, 'Resetar', _resetTimer, AppColors.amarelo),
       ],
     );
   }
 
   Widget _buildButton(IconData icon, String label, VoidCallback onPressed, Color color) {
     return ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(backgroundColor: color, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+      style: ElevatedButton.styleFrom(backgroundColor: color),
       icon: Icon(icon, color: Colors.white),
       label: Text(label, style: const TextStyle(color: Colors.white)),
       onPressed: onPressed,
@@ -227,18 +258,11 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
             return const Center(child: Text('Nenhuma sessão encontrada'));
           }
 
-          final sessions = snapshot.data!;
           return ListView.builder(
-            itemCount: sessions.length,
+            itemCount: snapshot.data!.length,
             itemBuilder: (context, index) {
-              final session = sessions[index];
               return ListTile(
-                title: Text('Duração: ${session['duracao']} min', style: const TextStyle(color: Colors.black)),
-                subtitle: Text('Data: ${session['created_at']}', style: const TextStyle(color: Colors.grey)),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _deleteSession(session['id']),
-                ),
+                title: Text('Duração: ${snapshot.data![index]['duracao']} min'),
               );
             },
           );

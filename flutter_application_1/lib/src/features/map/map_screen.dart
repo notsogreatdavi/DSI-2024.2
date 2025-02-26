@@ -38,6 +38,7 @@ void _onItemTapped(int index) {
           context,
           '/pomodoro',
           arguments: {
+            'grupo': grupo,
             'usuarioId': usuarioId,
             'grupoId': grupo['id'], // Pegando o ID do grupo atual
           },
