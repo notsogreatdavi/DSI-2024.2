@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../common/constants/app_colors.dart';
 import '../../common/widgets/custom_navigation_bar.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/widgets/custom_bottom_navigation_bar.dart';
 
 class RankingScreen extends StatefulWidget {
@@ -21,19 +22,38 @@ class RankingScreenState extends State<RankingScreen> {
     super.initState();
     grupo = widget.grupo;
   }
+  
+void _onItemTapped(int index) {
+  setState(() {
+    _selectedIndex = index;
+    if (index == 0) {
+      // Obtendo o ID do usuário logado
+      final supabase = Supabase.instance.client;
+      final usuarioId = supabase.auth.currentUser?.id;
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      if (index == 0) {
-        Navigator.pushNamed(context, '/pomodoro');
-      } else if (index == 1) {
-        Navigator.pushNamed(context, '/activities', arguments: {'grupo': grupo});
-      } else if (index == 2) {
-        // não faz nada pq já está na tela de ranking	
+      if (usuarioId != null) {
+        Navigator.pushNamed(
+          context,
+          '/pomodoro',
+          arguments: {
+            'usuarioId': usuarioId,
+            'grupoId': grupo['id'], // Pegando o ID do grupo atual
+          },
+        );
+      } else {
+        // Tratar erro caso o usuário não esteja autenticado
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro: usuário não autenticado!')),
+        );
       }
-    });
-  }
+    } else if (index == 3) {
+      Navigator.pushNamed(context, '/map', arguments: {'grupo': grupo});
+    }
+     else if (index == 1) { 
+      Navigator.pushNamed(context, '/activities', arguments: {'grupo': grupo});
+     }
+  });
+}
 
   @override
   Widget build(BuildContext context) {

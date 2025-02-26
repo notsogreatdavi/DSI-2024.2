@@ -65,7 +65,10 @@ class App extends StatelessWidget {
         '/login': (context) => LoginPage(),
         '/cadastro': (context) => CadastroPage(),
         '/home': (context) => const HomeScreen(),
-        '/map': (context) => MapScreen(),
+        '/map': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return MapScreen(grupo: args['grupo']);
+        },
         '/profile': (context) => const ProfileScreen(),
       },
     );
