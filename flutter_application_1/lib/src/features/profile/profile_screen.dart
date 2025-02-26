@@ -168,29 +168,51 @@ class ProfileScreenState extends State<ProfileScreen> {
                 child: ListView(
                   children: [
                     // Exibe a foto do perfil com o formato redondo
-                    ClipOval(
-                      child: _imagemSelecionada != null
-                          ? Image.memory(
-                              _imagemSelecionada!,
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                            )
-                          : Image.network(
-                              _imagemUrl ?? '',
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                            ),
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: _imagemSelecionada != null
+                            ? DecorationImage(
+                                image: MemoryImage(_imagemSelecionada!),
+                                fit: BoxFit.contain, // Reduz o zoom da imagem
+                              )
+                            : (_imagemUrl != null
+                                ? DecorationImage(
+                                    image: NetworkImage(_imagemUrl!),
+                                    fit: BoxFit
+                                        .contain, // Altera o ajuste da imagem
+                                  )
+                                : null),
+                      ),
+                      child: (_imagemSelecionada == null && _imagemUrl == null)
+                          ? Icon(Icons.person,
+                              size: 50, color: Colors.grey[600])
+                          : null,
                     ),
+
                     const SizedBox(height: 8),
-                    TextButton(
+                    ElevatedButton(
                       onPressed: _alterarFotoPerfil, // Função de alterar foto
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.laranja,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          side:
+                              BorderSide(color: AppColors.azulEscuro, width: 2),
+                        ),
+                      ),
                       child: const Text(
                         'Alterar foto de perfil',
                         style: TextStyle(
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline),
+                          color: Colors.white,
+                          fontFamily: 'Montserrat',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
