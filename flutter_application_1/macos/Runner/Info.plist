@@ -13,7 +13,9 @@
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>$(PRODUCT_NAME)</string>
+    <string>Mind Rats</string> <!-- Nome do app -->
+    <key>CFBundleDisplayName</key> <!-- Recurso que garante uma boa exibição do nome -->
+    <string>Mind Rats</string> 
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
