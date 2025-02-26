@@ -1,63 +1,70 @@
-name: flutter_application_1
-description: "A new Flutter project."
+  name: flutter_application_1
+  description: "A new Flutter project."
 
 
-# Prevent accidental publishing to pub.dev.
-publish_to: 'none'
+  # Prevent accidental publishing to pub.dev.
+  publish_to: 'none'
 
-version: 1.0.0+1
+  version: 1.0.0+1
 
-environment:
-  sdk: ^3.5.4
+  environment:
+    sdk: ^3.5.4
 
-dependencies:
+  dependencies:
+    flutter:
+      sdk: flutter
+    image_picker: ^1.0.7
+    image_picker_web: ^4.0.0
+    supabase_flutter: ^2.0.0
+    uuid: ^3.0.7
+    intl: ^0.17.0
+    google_nav_bar: ^5.0.7
+    flutter_feather_icons: ^2.0.0
+    flutter_masked_text2: ^0.9.1
+    sqflite: ^2.2.8+4
+    path_provider: ^2.1.2 
+    google_fonts: ^6.1.0 
+    latlong2: 0.9.0
+    flutter_map: 6.1.0
+    app_links: ^6.4.0
+
+  dev_dependencies:
+    flutter_test:
+      sdk: flutter
+    flutter_launcher_icons: ^0.14.3
+
+    flutter_lints: ^5.0.0
+
+  flutter_launcher_icons:
+    android: true
+    ios: true
+    image_path: "assets/icon/icon_mind-rats.png"
+
   flutter:
-    sdk: flutter
-  image_picker: ^1.0.7
-  image_picker_web: ^4.0.0
-  supabase_flutter: ^2.0.0
-  uuid: ^3.0.7
-  intl: ^0.17.0
-  google_nav_bar: ^5.0.7
-  flutter_feather_icons: ^2.0.0
-  flutter_masked_text2: ^0.9.1
-  sqflite: ^2.2.8+4
-  path_provider: ^2.1.2 
-  google_fonts: ^6.1.0 
-  latlong2: 0.9.0
-  flutter_map: 6.1.0
+    uses-material-design: true
 
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-
-  flutter_lints: ^5.0.0
-
-flutter:
-  uses-material-design: true
-
-  # Enable generation of localized Strings from arb files.
-  generate: true
-  fonts:
-    - family: Modak
-      fonts: 
-        - asset: assets/fonts/Modak-Regular.ttf
-    - family: Montserrat
-      fonts:
-        - asset: assets/fonts/Montserrat-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/Montserrat-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Montserrat-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/Montserrat-Bold.ttf
-          weight: 700
-  assets:
-    - assets/images/teste.jpg
-    - assets/images/livro_ativo.png
-    - assets/images/RatoBrancoFundoAzul.png
-    - assets/images/ronaldo_teste.jpg
-    - assets/images/dois_Gatos.jpg
-    - assets/images/gato_real.jpg
-    - assets/images/gato_rosa.jpg
-    - assets/ca/
+    # Enable generation of localized Strings from arb files.
+    generate: true
+    fonts:
+      - family: Modak
+        fonts: 
+          - asset: assets/fonts/Modak-Regular.ttf
+      - family: Montserrat
+        fonts:
+          - asset: assets/fonts/Montserrat-Regular.ttf
+            weight: 400
+          - asset: assets/fonts/Montserrat-Medium.ttf
+            weight: 500
+          - asset: assets/fonts/Montserrat-SemiBold.ttf
+            weight: 600
+          - asset: assets/fonts/Montserrat-Bold.ttf
+            weight: 700
+    assets:
+      - assets/images/teste.jpg
+      - assets/images/livro_ativo.png
+      - assets/images/RatoBrancoFundoAzul.png
+      - assets/images/ronaldo_teste.jpg
+      - assets/images/dois_Gatos.jpg
+      - assets/images/gato_real.jpg
+      - assets/images/gato_rosa.jpg
+      - assets/ca/
