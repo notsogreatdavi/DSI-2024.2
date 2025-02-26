@@ -15,39 +15,55 @@ class CustomBottomNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.azulEscuro,
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: GNav(
-        gap: 8,
-        color: Colors.white, // Ícones não selecionados
-        activeColor: Colors.white, // Ícones selecionados
-        backgroundColor: AppColors.azulEscuro,
-        tabBackgroundColor: Colors.white.withOpacity(0.2), // Fundo do ícone selecionado
-        padding: const EdgeInsets.all(16),
-        selectedIndex: currentIndex,
-        onTabChange: onTap,
-        tabs: const [
-          GButton(
-            icon: FeatherIcons.clock,
-            text: 'Pomodoro',
+    return Material(
+      elevation: 0,
+      color: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.azulEscuro,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
           ),
-          GButton(
-            icon: FeatherIcons.home,
-            text: 'Atividades',
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(25),
+            topRight: Radius.circular(25),
           ),
-          GButton(
-            icon: FeatherIcons.award,
-            text: 'Ranking',
+          child: GNav(
+            gap: 8,
+            color: Colors.white, 
+            activeColor: Colors.white,
+            rippleColor: Colors.transparent,
+            hoverColor: Colors.transparent,
+            backgroundColor: AppColors.azulEscuro,
+            tabBackgroundColor: Colors.white.withOpacity(0.2),
+            tabMargin: const EdgeInsets.all(0),
+            padding: const EdgeInsets.all(16),
+            selectedIndex: currentIndex,
+            onTabChange: onTap,
+            tabs: const [
+              GButton(
+                icon: FeatherIcons.clock,
+                text: 'Pomodoro',
+              ),
+              GButton(
+                icon: FeatherIcons.home,
+                text: 'Atividades',
+              ),
+              GButton(
+                icon: FeatherIcons.award,
+                text: 'Ranking',
+              ),
+              GButton(
+                icon: FeatherIcons.map,
+                text: 'Mapa',
+              ),
+            ],
           ),
-          GButton(
-            icon: FeatherIcons.map, // Novo botão do mapa 🗺️
-            text: 'Mapa',
-          ),
-        ],
+        ),
       ),
     );
   }
