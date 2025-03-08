@@ -64,11 +64,11 @@ class _UpdateDeleteActivityScreenState
           .select()
           .single();
 
-      if (response.isEmpty) throw Exception('Erro ao atualizar atividade');
+      if (response.isEmpty) throw Exception('Erro ao atualizar atividade.');
 
       Navigator.pop(context, true); // Indica que a atividade foi atualizada
     } catch (e) {
-      setState(() => errorMessage = 'Erro ao atualizar atividade: $e');
+      setState(() => errorMessage = 'Erro ao atualizar atividade.');
     }
   }
 
@@ -76,7 +76,7 @@ class _UpdateDeleteActivityScreenState
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) {
-        throw Exception('Usuário não está logado');
+        throw Exception('Usuário não está logado.');
       }
 
       final DateTime activityDate =
@@ -122,7 +122,7 @@ class _UpdateDeleteActivityScreenState
           .maybeSingle();
 
       if (grupoUsuarioResponse == null) {
-        throw Exception('Usuário não encontrado no grupo');
+        throw Exception('Usuário não encontrado no grupo.');
       }
 
       final Map<String, dynamic> grupoUsuario = grupoUsuarioResponse;
@@ -157,7 +157,7 @@ class _UpdateDeleteActivityScreenState
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Erro ao deletar atividade: $e';
+        errorMessage = 'Erro ao deletar atividade.';
       });
     }
   }

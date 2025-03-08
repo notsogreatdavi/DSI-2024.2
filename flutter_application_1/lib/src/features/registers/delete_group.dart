@@ -36,10 +36,10 @@ class _DeleteClassScreenState extends State<DeleteClassScreen> {
       // Remove o grupo na tabela grupo
       await _supabase.from('grupo').delete().match({'id': id});
 
-      _showMessage('Grupo deletado com sucesso! 🎉');
+      _showMessage('Grupo deletado.');
       Navigator.pop(context, true); // Retorna à tela anterior informando que houve alteração
     } catch (e) {
-      _showMessage('Erro ao deletar o grupo: $e');
+      _showMessage('Erro ao deletar o grupo.');
     }
   }
 

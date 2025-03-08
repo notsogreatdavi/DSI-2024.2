@@ -26,7 +26,6 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
   int? loggedInUserRank;
   String filtro = '';
   final supabase = Supabase.instance.client;
-
   @override
   void initState() {
     super.initState();
@@ -38,7 +37,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
 
 Future<void> _loadUserData() async {
   try {
-    final user = supabase.auth.currentUser; // Use a variável de classe
+    final user = supabase.auth.currentUser;
     if (user != null) {
       final userData = await supabase
           .from('usuarios')
@@ -53,7 +52,7 @@ Future<void> _loadUserData() async {
       }
     }
   } catch (e) {
-    print('Erro ao carregar dados do usuário: $e');
+    print('Erro ao carregar dados do usuário.');
   }
 }
 
@@ -76,7 +75,7 @@ Future<void> _loadUserData() async {
       });
     } catch (e) {
       setState(() {
-        errorMessage = 'Erro ao carregar atividades: $e';
+        errorMessage = 'Erro ao carregar atividades.';
         isLoading = false;
       });
     }
@@ -127,7 +126,7 @@ Future<void> _loadUserData() async {
       });
     } catch (e) {
       setState(() {
-        errorMessage = 'Erro ao carregar dados do usuário: $e';
+        errorMessage = 'Erro ao carregar dados do usuário.';
       });
     }
   }
@@ -153,7 +152,7 @@ void _onItemTapped(int index) {
       } else {
         // Tratar erro caso o usuário não esteja autenticado
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro: usuário não autenticado!')),
+          const SnackBar(content: Text('Erro: usuário não autenticado.')),
         );
       }
     } else if (index == 2) {
@@ -519,7 +518,7 @@ void _onItemTapped(int index) {
                     Expanded(
                       child: filteredAtividades.isEmpty
                           ? const Center(
-                              child: Text('Nenhuma atividade encontrada'))
+                              child: Text('Nenhuma atividade encontrada.'))
                           : ListView(
                               children: activityWidgets,
                             ),

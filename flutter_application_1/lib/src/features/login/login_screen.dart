@@ -28,7 +28,7 @@ class _LoginPageState extends State<LoginPage> {
         _showMessage('Erro ao realizar login: ${response.error?.message}');
       }
     } catch (error) {
-      _showMessage('Erro inesperado: $error');
+      _showMessage('Erro inesperado.');
     }
   }
 

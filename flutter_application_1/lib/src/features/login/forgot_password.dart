@@ -158,7 +158,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
       _showMessage('Um link para redefinir sua senha foi enviado para o seu email.');
     } catch (error) {
-      print('Erro ao solicitar redefinição de senha: $error'); // Log do erro
+      print('Erro ao solicitar redefinição de senha.'); 
       if (error.toString().contains('rate limit exceeded')) {
         _showErrorDialog('Aguarde alguns minutos antes de solicitar um novo email.');
       } else {
@@ -189,7 +189,7 @@ Future<void> _updatePassword() async {
       await _supabase.auth.updateUser(
         UserAttributes(password: newPassword),
       );
-      _showMessage('Senha atualizada com sucesso.');
+      _showMessage('Senha atualizada.');
       setState(() {
         _isResetPassword = false;
         _resetCode = null;
@@ -205,7 +205,7 @@ Future<void> _updatePassword() async {
       _showMessage('Código de redefinição ou email inválido.');
     }
   } catch (error) {
-    print('Erro ao atualizar a senha: $error'); // Log do erro
+    print('Erro ao atualizar a senha.'); 
     _showMessage('Erro ao atualizar a senha. Tente novamente mais tarde.');
   }
 }

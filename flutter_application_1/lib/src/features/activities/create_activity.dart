@@ -53,7 +53,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
       return _supabase.storage.from('imagensdsi').getPublicUrl(nomeArquivo);
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao enviar imagem: $error')),
+        SnackBar(content: Text('Erro ao enviar imagem.')),
       );
       return null;
     }
@@ -83,7 +83,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
 
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) {
-        throw Exception('Usuário não está logado');
+        throw Exception('Usuário não está logado.');
       }
 
       // Se uma imagem foi selecionada, faz o upload e obtém a URL
@@ -104,7 +104,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
           .maybeSingle();
 
       if (grupoUsuarioResponse == null) {
-        throw Exception('Usuário não encontrado no grupo');
+        throw Exception('Usuário não encontrado no grupo.');
       }
 
       final Map<String, dynamic> grupoUsuario = grupoUsuarioResponse;
@@ -151,7 +151,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
           .single();
 
       if (activityResponse.isEmpty) {
-        throw Exception('Erro ao criar atividade');
+        throw Exception('Erro ao criar atividade.');
       }
 
       // Verifica se a nova atividade está no mesmo dia do último dia ativo
@@ -202,7 +202,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
       Navigator.pop(context, true);
     } catch (e) {
       setState(() {
-        errorMessage = 'Erro ao criar atividade: $e';
+        errorMessage = 'Erro ao criar atividade.';
       });
     }
   }
