@@ -42,7 +42,7 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
           );
       return _supabase.storage.from('imagensdsi').getPublicUrl(nomeArquivo);
     } catch (error) {
-      _showMessage('Erro ao enviar imagem: $error');
+      _showMessage('Erro ao enviar imagem.');
       return null;
     }
   }
@@ -54,7 +54,7 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
     final atividades = _atividadesController.text.trim();
 
     if (nome.isEmpty || descricao.isEmpty || area.isEmpty) {
-      _showMessage('Por favor, preencha todos os campos obrigatórios!');
+      _showMessage('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
 
@@ -85,12 +85,12 @@ class RegisterClassScreenState extends State<RegisterClassScreen> {
         });
       }
 
-      _showMessage('Grupo cadastrado com sucesso! 🎉');
+      _showMessage('Grupo cadastrado.');
       if (mounted) {
         Navigator.pop(context, true);
       }
     } catch (error) {
-      _showMessage('Erro inesperado: $error');
+      _showMessage('Erro inesperado.');
     }
   }
 

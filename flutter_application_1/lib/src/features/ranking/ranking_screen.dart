@@ -50,7 +50,7 @@ class RankingScreenState extends State<RankingScreen> {
         }
       }
     } catch (e) {
-      print('Erro ao carregar dados do usuário: $e');
+      print('Erro ao carregar dados do usuário.');
     }
   }
 
@@ -85,7 +85,7 @@ class RankingScreenState extends State<RankingScreen> {
       });
     } catch (e) {
       setState(() {
-        errorMessage = 'Erro ao carregar ranking: $e';
+        errorMessage = 'Erro ao carregar ranking.';
         isLoading = false;
       });
     }
@@ -108,7 +108,7 @@ class RankingScreenState extends State<RankingScreen> {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Erro: usuário não autenticado!')),
+            const SnackBar(content: Text('Erro: usuário não autenticado.')),
           );
         }
       } else if (index == 3) {

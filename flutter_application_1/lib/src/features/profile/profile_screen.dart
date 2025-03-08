@@ -62,7 +62,7 @@ class ProfileScreenState extends State<ProfileScreen> {
         isLoading = false;
       });
     } catch (e) {
-      print('Erro ao carregar usuário: $e');
+      print('Erro ao carregar usuário.');
       _showMessage('Erro ao carregar perfil.');
       setState(() => isLoading = false);
     }
@@ -104,7 +104,7 @@ class ProfileScreenState extends State<ProfileScreen> {
           );
       return _supabase.storage.from('imagensdsi').getPublicUrl(nomeArquivo);
     } catch (error) {
-      _showMessage('Erro ao enviar imagem: $error');
+      _showMessage('Erro ao enviar imagem.');
       return null;
     }
   }
@@ -120,7 +120,7 @@ class ProfileScreenState extends State<ProfileScreen> {
     final senha = _senhaController.text.trim();
 
     if (nome.isEmpty || email.isEmpty) {
-      _showMessage('Nome e Email são obrigatórios!');
+      _showMessage('Nome e Email são obrigatórios.');
       return;
     }
 
@@ -138,7 +138,7 @@ class ProfileScreenState extends State<ProfileScreen> {
         );
       }
 
-      _showMessage('Perfil atualizado com sucesso! 🎉');
+      _showMessage('Perfil atualizado.');
 
       // Retorna 'true' para indicar que houve alteração
       Navigator.pop(context, true);

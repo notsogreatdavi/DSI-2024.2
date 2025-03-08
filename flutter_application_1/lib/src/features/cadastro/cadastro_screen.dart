@@ -21,7 +21,7 @@ class _CadastroPageState extends State<CadastroPage> {
     final senha = _senhaController.text.trim();
 
     if (nome.isEmpty || email.isEmpty || senha.isEmpty) {
-      _showMessage('Por favor, preencha todos os campos!');
+      _showMessage('Por favor, preencha todos os campos.');
       return;
     }
 
@@ -40,7 +40,7 @@ class _CadastroPageState extends State<CadastroPage> {
           'email': email,
         });
 
-        _showMessage('Cadastro realizado com sucesso! 🎉');
+        _showMessage('Cadastro realizado.');
         Navigator.pushReplacementNamed(context, '/login');
       } else {
         _showMessage('Erro no cadastro: ${response.error?.message}');
