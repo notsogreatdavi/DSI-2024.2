@@ -40,7 +40,7 @@ class _CadastroPageState extends State<CadastroPage> {
           'email': email,
         });
 
-        _showMessage('Cadastro realizado.');
+        _showMessage('Cadastro realizado. Confirme o e-mail que lhe foi enviado.');
         Navigator.pushReplacementNamed(context, '/login');
       } else {
         _showMessage('Erro no cadastro: ${response.error?.message}');
