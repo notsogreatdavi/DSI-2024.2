@@ -224,15 +224,14 @@ Future<void> _updatePassword() async {
         title: Text(''),
         centerTitle: true,
         backgroundColor: AppColors.branco,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.arrow_back),
-            color: AppColors.azulEscuro,
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-        ],
+        automaticallyImplyLeading: false, 
+        leading: IconButton(  
+          icon: Icon(Icons.arrow_back),
+          color: AppColors.azulEscuro,
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
