@@ -50,7 +50,7 @@ class RankingScreenState extends State<RankingScreen> {
         }
       }
     } catch (e) {
-      print('Erro ao carregar dados do usuário: $e');
+      print('Erro ao carregar dados do usuário.');
     }
   }
 
@@ -85,7 +85,7 @@ class RankingScreenState extends State<RankingScreen> {
       });
     } catch (e) {
       setState(() {
-        errorMessage = 'Erro ao carregar ranking: $e';
+        errorMessage = 'Erro ao carregar ranking.';
         isLoading = false;
       });
     }
@@ -94,29 +94,29 @@ class RankingScreenState extends State<RankingScreen> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      if (index == 0) {
-        final usuarioId = supabase.auth.currentUser?.id;
-
-        if (usuarioId != null) {
-          Navigator.pushNamed(
-            context,
-            '/pomodoro',
-            arguments: {
-              'usuarioId': usuarioId,
-              'grupoId': grupo['id'],
-            },
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Erro: usuário não autenticado!')),
-          );
-        }
-      } else if (index == 3) {
-        Navigator.pushNamed(context, '/map', arguments: {'grupo': grupo});
-      } else if (index == 1) {
-        Navigator.pushNamed(context, '/activities', arguments: {'grupo': grupo});
-      }
     });
+
+    final usuarioId = supabase.auth.currentUser?.id;
+
+    if (usuarioId != null) {
+      if (index == 0) {
+        Navigator.pushNamed(context, '/pomodoro', arguments: {
+          'usuarioId': usuarioId,
+          'grupoId': widget.grupo['id'],
+          'grupo': widget.grupo,
+        });
+      } else if (index == 1) {
+        Navigator.pushNamed(context, '/activities', arguments: {'grupo': widget.grupo});
+      } else if (index == 2) {
+        Navigator.pushNamed(context, '/ranking', arguments: {'grupo': widget.grupo});
+      } else if (index == 3) {
+        Navigator.pushNamed(context, '/map', arguments: {'grupo': widget.grupo});
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro: usuário não autenticado.')),
+      );
+    }
   }
 
   @override

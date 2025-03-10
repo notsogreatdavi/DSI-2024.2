@@ -25,6 +25,7 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
   bool _isRunning = false;
   Timer? _timer;
   late Future<List<Map<String, dynamic>>> _sessionsFuture;
+  String? userProfileImageUrl;
 
   final TextEditingController _timeController = TextEditingController();
   int _selectedIndex = 0; // Índice da aba do Pomodoro
@@ -33,6 +34,7 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
   void initState() {
     super.initState();
     _sessionsFuture = _fetchSessions();
+    _loadUserData();
   }
 
   @override
@@ -40,6 +42,27 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
     _timer?.cancel();
     _timeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final user = supabase.auth.currentUser;
+      if (user != null) {
+        final userData = await supabase
+            .from('usuarios')
+            .select('fotoUrlPerfil')
+            .eq('id', user.id)
+            .maybeSingle();
+        
+        if (userData != null && mounted) {
+          setState(() {
+            userProfileImageUrl = userData['fotoUrlPerfil'];
+          });
+        }
+      }
+    } catch (e) {
+      print('Erro ao carregar dados do usuário.');
+    }
   }
 
   void _startTimer() {
@@ -138,12 +161,26 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
       _selectedIndex = index;
     });
 
-    if (index == 1) {
-      Navigator.pushNamed(context, '/activities', arguments: {'grupo': widget.grupo});
-    } else if (index == 2) {
-      Navigator.pushNamed(context, '/ranking', arguments: {'grupo': widget.grupo});
-    } else if (index == 3) {
-      Navigator.pushNamed(context, '/map', arguments: {'grupo': widget.grupo});
+    final usuarioId = supabase.auth.currentUser?.id;
+
+    if (usuarioId != null) {
+      if (index == 0) {
+        Navigator.pushNamed(context, '/pomodoro', arguments: {
+          'usuarioId': usuarioId,
+          'grupoId': widget.grupoId,
+          'grupo': widget.grupo,
+        });
+      } else if (index == 1) {
+        Navigator.pushNamed(context, '/activities', arguments: {'grupo': widget.grupo});
+      } else if (index == 2) {
+        Navigator.pushNamed(context, '/ranking', arguments: {'grupo': widget.grupo});
+      } else if (index == 3) {
+        Navigator.pushNamed(context, '/map', arguments: {'grupo': widget.grupo});
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro: usuário não autenticado.')),
+      );
     }
   }
 
@@ -152,9 +189,18 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
     return Scaffold(
       appBar: CustomNavigationBar(
         title: 'Pomodoro',
+        profileImageUrl: userProfileImageUrl,
         onBackButtonPressed: () => Navigator.pushNamed(context, '/home'),
         onMoreButtonPressed: () {},
-        onProfileButtonPressed: () {},
+        onProfileButtonPressed: () async {
+          // Navega para a tela de perfil e aguarda o retorno
+          final result = await Navigator.pushNamed(context, '/profile');
+          
+          // Se houve atualização, recarrega os dados do usuário
+          if (result == true) {
+            _loadUserData();
+          }
+        },
       ),
       backgroundColor: AppColors.cinzaClaro,
       body: Padding(

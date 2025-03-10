@@ -69,7 +69,7 @@ class _UpdateGroupScreenState extends State<UpdateGroupScreen> {
           );
       return _supabase.storage.from('imagensdsi').getPublicUrl(nomeArquivo);
     } catch (error) {
-      _showMessage('Erro ao enviar imagem: $error');
+      _showMessage('Erro ao enviar imagem.');
       return null;
     }
   }
@@ -92,13 +92,13 @@ class _UpdateGroupScreenState extends State<UpdateGroupScreen> {
       }).match({'id': widget.grupo['id']}).select();
 
       if (response.isNotEmpty) {
-        _showMessage('Grupo atualizado com sucesso! 🎉');
+        _showMessage('Grupo atualizado.');
         Navigator.pop(context, response.first);
       } else {
-        _showMessage('Erro ao atualizar o grupo: Nenhum dado retornado!');
+        _showMessage('Erro ao atualizar o grupo: nenhum dado retornado.');
       }
     } catch (e) {
-      _showMessage('Erro ao editar o grupo: $e');
+      _showMessage('Erro ao editar o grupo.');
     }
   }
 
