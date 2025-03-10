@@ -60,19 +60,17 @@ class _CadastroPageState extends State<CadastroPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.branco,
-        appBar: AppBar(
+      appBar: AppBar(
         title: Text(''),
         centerTitle: true,
         backgroundColor: AppColors.branco,
-        actions: [
-          IconButton(
+        leading: IconButton(
             icon: Icon(Icons.arrow_back),
             color: AppColors.azulEscuro,
             onPressed: () {
               Navigator.pushReplacementNamed(context, '/onboarding');
             },
           ),
-        ]
       ),
       body: SingleChildScrollView(
         child: Padding(
