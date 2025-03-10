@@ -30,7 +30,7 @@ Para mais detalhes sobre o projeto, consulte o [artigo científico](https://docs
 
 ## 📱 **Visão Geral do Aplicativo**
 
-###  Visão Geral
+### Visão Geral
 O aplicativo é uma plataforma voltada para estudantes, que permite a criação e gestão de grupos temáticos. Dentro desses grupos, os participantes podem realizar atividades específicas para acumular pontos e competir em rankings internos. As atividades devem ser registradas com fotos e descrições detalhadas para que assim ganhem pontuações. Para incentivar a consistência, os usuários podem manter uma "streak" (sequência) ao enviar pelo menos uma atividade por dia no grupo.
 
 ### Objetivo
@@ -39,20 +39,19 @@ O principal objetivo do aplicativo é estimular o aprendizado e o compartilhamen
 ### Funcionalidades
 - **Criação e Gestão de Grupos**: Permite a criação de grupos temáticos e a gestão dos mesmos.
 
-![Tela Principal](assets/home.png)
-
+<img src="assets/home.png" alt="Tela Principal" width="300"/>
 
 - **Registro de Atividades**: Os usuários podem registrar atividades com fotos e descrições detalhadas.
 
-![Tela de Grupo](assets/group.png)
+<img src="assets/group.png" alt="Tela de Grupo" width="300"/>
 
 - **Pontuação e Rankings**: Os participantes acumulam pontos e competem em rankings internos.
 - **Streaks**: Incentiva a consistência ao permitir que os usuários mantenham uma sequência de atividades diárias.
 
-![Tela de Classificação](assets/ranking.png)
+<img src="assets/ranking.png" alt="Tela de Classificação" width="300"/>
 
 - **Perfil do Usuário**: Exibição e edição das informações pessoais do usuário.
 
-![Tela de Perfil](assets/profile.png)
+<img src="assets/profile.png" alt="Tela de Perfil" width="300"/>
 
 ---
