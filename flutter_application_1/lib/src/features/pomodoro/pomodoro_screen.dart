@@ -161,12 +161,26 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
       _selectedIndex = index;
     });
 
-    if (index == 1) {
-      Navigator.pushNamed(context, '/activities', arguments: {'grupo': widget.grupo});
-    } else if (index == 2) {
-      Navigator.pushNamed(context, '/ranking', arguments: {'grupo': widget.grupo});
-    } else if (index == 3) {
-      Navigator.pushNamed(context, '/map', arguments: {'grupo': widget.grupo});
+    final usuarioId = supabase.auth.currentUser?.id;
+
+    if (usuarioId != null) {
+      if (index == 0) {
+        Navigator.pushNamed(context, '/pomodoro', arguments: {
+          'usuarioId': usuarioId,
+          'grupoId': widget.grupoId,
+          'grupo': widget.grupo,
+        });
+      } else if (index == 1) {
+        Navigator.pushNamed(context, '/activities', arguments: {'grupo': widget.grupo});
+      } else if (index == 2) {
+        Navigator.pushNamed(context, '/ranking', arguments: {'grupo': widget.grupo});
+      } else if (index == 3) {
+        Navigator.pushNamed(context, '/map', arguments: {'grupo': widget.grupo});
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro: usuário não autenticado.')),
+      );
     }
   }
 

@@ -52,32 +52,29 @@ class _MapScreenState extends State<MapScreen> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      if (index == 0) {
-        // Obtendo o ID do usuário logado
-        final usuarioId = supabase.auth.currentUser?.id;
-
-        if (usuarioId != null) {
-          Navigator.pushNamed(
-            context,
-            '/pomodoro',
-            arguments: {
-              'grupo': grupo,
-              'usuarioId': usuarioId,
-              'grupoId': grupo['id'], // Pegando o ID do grupo atual
-            },
-          );
-        } else {
-          // Tratar erro caso o usuário não esteja autenticado
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Erro: usuário não autenticado!')),
-          );
-        }
-      } else if (index == 2) {
-        Navigator.pushNamed(context, '/ranking', arguments: {'grupo': grupo});
-      } else if (index == 1) {
-        Navigator.pushNamed(context, '/activities', arguments: {'grupo': grupo});
-      }
     });
+
+    final usuarioId = supabase.auth.currentUser?.id;
+
+    if (usuarioId != null) {
+      if (index == 0) {
+        Navigator.pushNamed(context, '/pomodoro', arguments: {
+          'usuarioId': usuarioId,
+          'grupoId': widget.grupo['id'],
+          'grupo': widget.grupo,
+        });
+      } else if (index == 1) {
+        Navigator.pushNamed(context, '/activities', arguments: {'grupo': widget.grupo});
+      } else if (index == 2) {
+        Navigator.pushNamed(context, '/ranking', arguments: {'grupo': widget.grupo});
+      } else if (index == 3) {
+        Navigator.pushNamed(context, '/map', arguments: {'grupo': widget.grupo});
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro: usuário não autenticado.')),
+      );
+    }
   }
 
   @override
