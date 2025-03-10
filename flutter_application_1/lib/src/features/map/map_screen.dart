@@ -18,51 +18,74 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   int _selectedIndex = 3; // Índice do Mapa na bottom bar
   late Map<String, dynamic> grupo;
+  String? userProfileImageUrl;
+  final supabase = Supabase.instance.client;
 
   @override
   void initState() {
     super.initState();
     grupo = widget.grupo;
+    _loadUserData();
   }
 
-void _onItemTapped(int index) {
-  setState(() {
-    _selectedIndex = index;
-    if (index == 0) {
-      // Obtendo o ID do usuário logado
-      final supabase = Supabase.instance.client;
-      final usuarioId = supabase.auth.currentUser?.id;
-
-      if (usuarioId != null) {
-        Navigator.pushNamed(
-          context,
-          '/pomodoro',
-          arguments: {
-            'grupo': grupo,
-            'usuarioId': usuarioId,
-            'grupoId': grupo['id'], // Pegando o ID do grupo atual
-          },
-        );
-      } else {
-        // Tratar erro caso o usuário não esteja autenticado
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro: usuário não autenticado!')),
-        );
+  Future<void> _loadUserData() async {
+    try {
+      final user = supabase.auth.currentUser;
+      if (user != null) {
+        final userData = await supabase
+            .from('usuarios')
+            .select('fotoUrlPerfil')
+            .eq('id', user.id)
+            .maybeSingle();
+        
+        if (userData != null && mounted) {
+          setState(() {
+            userProfileImageUrl = userData['fotoUrlPerfil'];
+          });
+        }
       }
-    } else if (index == 2) {
-      Navigator.pushNamed(context, '/ranking', arguments: {'grupo': grupo});
+    } catch (e) {
+      print('Erro ao carregar dados do usuário.');
     }
-     else if (index == 1) { 
-      Navigator.pushNamed(context, '/activities', arguments: {'grupo': grupo});
-     }
-  });
-}
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+      if (index == 0) {
+        // Obtendo o ID do usuário logado
+        final usuarioId = supabase.auth.currentUser?.id;
+
+        if (usuarioId != null) {
+          Navigator.pushNamed(
+            context,
+            '/pomodoro',
+            arguments: {
+              'grupo': grupo,
+              'usuarioId': usuarioId,
+              'grupoId': grupo['id'], // Pegando o ID do grupo atual
+            },
+          );
+        } else {
+          // Tratar erro caso o usuário não esteja autenticado
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erro: usuário não autenticado!')),
+          );
+        }
+      } else if (index == 2) {
+        Navigator.pushNamed(context, '/ranking', arguments: {'grupo': grupo});
+      } else if (index == 1) {
+        Navigator.pushNamed(context, '/activities', arguments: {'grupo': grupo});
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomNavigationBar(
         title: 'Mapa',
+        profileImageUrl: userProfileImageUrl,
         onBackButtonPressed: () {
           Navigator.pushNamed(context, '/home');
         },
@@ -78,8 +101,14 @@ void _onItemTapped(int index) {
             });
           }
         },
-        onProfileButtonPressed: () {
-          // Ação para o botão de perfil, se necessário
+        onProfileButtonPressed: () async {
+          // Navega para a tela de perfil e aguarda o retorno
+          final result = await Navigator.pushNamed(context, '/profile');
+          
+          // Se houve atualização, recarrega os dados do usuário
+          if (result == true) {
+            _loadUserData();
+          }
         },
       ),
       backgroundColor: AppColors.cinzaClaro,
