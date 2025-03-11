@@ -43,34 +43,166 @@ class _UpdateDeleteActivityScreenState
         widget.atividade['fotoUrlAtivi']; // Carrega a URL da foto da atividade
   }
 
-  Future<void> _updateActivity() async {
-    if (!_formKey.currentState!.validate()) return;
+Future<void> _updateActivity() async {
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() => errorMessage = '');
+  setState(() => errorMessage = '');
 
-    try {
-      final DateTime dateTime = DateFormat('dd/MM/yyyy HH:mm').parse(
-        '${_dataController.text} ${_horaController.text}',
-      );
+  try {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('Usuário não está logado.');
+    }
 
-      final response = await Supabase.instance.client
+    // Data original da atividade
+    final DateTime originalDate = DateTime.parse(widget.atividade['created_at']);
+    final String originalDateStr = DateFormat('yyyy-MM-dd').format(originalDate);
+
+    // Nova data da atividade
+    final DateTime newDateTime = DateFormat('dd/MM/yyyy HH:mm').parse(
+      '${_dataController.text} ${_horaController.text}',
+    );
+    final String newDateStr = DateFormat('yyyy-MM-dd').format(newDateTime);
+
+    // Se a data não foi alterada, apenas atualize os detalhes básicos
+    if (originalDateStr == newDateStr) {
+      await Supabase.instance.client
           .from('atividade')
           .update({
             'titulo_ativi': _tituloController.text.trim(),
             'descricao_ativi': _descricaoController.text.trim(),
-            'created_at': dateTime.toIso8601String(),
+            'created_at': newDateTime.toIso8601String(),
           })
-          .match({'id': widget.atividade['id']})
-          .select()
-          .single();
-
-      if (response.isEmpty) throw Exception('Erro ao atualizar atividade.');
-
-      Navigator.pop(context, true); // Indica que a atividade foi atualizada
-    } catch (e) {
-      setState(() => errorMessage = 'Erro ao atualizar atividade.');
+          .match({'id': widget.atividade['id']});
+      
+      Navigator.pop(context, true);
+      return;
     }
+
+    // Obter dados do usuário e do grupo
+    final grupoUsuarioResponse = await Supabase.instance.client
+        .from('grupo_usuarios')
+        .select('sequencia, ultimo_dia_ativo')
+        .eq('grupo_id', widget.atividade['grupo_id'])
+        .eq('usuario_id', userId)
+        .maybeSingle();
+
+    if (grupoUsuarioResponse == null) {
+      throw Exception('Usuário não encontrado no grupo.');
+    }
+
+    final Map<String, dynamic> grupoUsuario = grupoUsuarioResponse;
+    final String? ultimoDiaAtivoString = grupoUsuario['ultimo_dia_ativo'];
+    final DateTime? ultimoDiaAtivo = ultimoDiaAtivoString != null
+        ? DateTime.parse(ultimoDiaAtivoString)
+        : null;
+    final int sequenciaAtual = grupoUsuario['sequencia'] ?? 0;
+
+    // Busca o valor de 'ativo' da tabela 'usuarios'
+    final userResponse = await Supabase.instance.client
+        .from('usuarios')
+        .select('ativo')
+        .eq('id', userId)
+        .single();
+    final int ativoAtual = userResponse['ativo'];
+
+    // 1. Verificar se há outras atividades no dia original
+    final otherActivitiesOnOriginalDayResponse = await Supabase.instance.client
+        .from('atividade')
+        .select('id')
+        .eq('grupo_id', widget.atividade['grupo_id'])
+        .eq('id_aluno', userId)
+        .gte('created_at', originalDateStr + ' 00:00:00')
+        .lte('created_at', originalDateStr + ' 23:59:59')
+        .neq('id', widget.atividade['id'])
+        .limit(1)
+        .maybeSingle();
+
+    // 2. Verificar se já existe atividade no novo dia
+    final activitiesOnNewDayResponse = await Supabase.instance.client
+        .from('atividade')
+        .select('id')
+        .eq('grupo_id', widget.atividade['grupo_id'])
+        .eq('id_aluno', userId)
+        .gte('created_at', newDateStr + ' 00:00:00')
+        .lte('created_at', newDateStr + ' 23:59:59')
+        .limit(1)
+        .maybeSingle();
+
+    // 3. Atualizar os dados da atividade
+    await Supabase.instance.client
+        .from('atividade')
+        .update({
+          'titulo_ativi': _tituloController.text.trim(),
+          'descricao_ativi': _descricaoController.text.trim(),
+          'created_at': newDateTime.toIso8601String(),
+        })
+        .match({'id': widget.atividade['id']});
+
+    // 4. Ajustar contadores conforme necessário
+    int novoAtivo = ativoAtual;
+    int novaSequencia = sequenciaAtual;
+
+    // Se não houver outras atividades no dia original, diminuir contadores
+    if (otherActivitiesOnOriginalDayResponse == null) {
+      novoAtivo--;
+      novaSequencia--;
+    }
+
+    // Se não houver atividades no novo dia, aumentar contadores
+    if (activitiesOnNewDayResponse == null) {
+      novoAtivo++;
+      novaSequencia++;
+    }
+
+    // Atualizar contadores no banco de dados
+    await Supabase.instance.client.from('usuarios').update({
+      'ativo': novoAtivo,
+    }).eq('id', userId);
+
+    // 5. Verificar e atualizar último dia ativo
+    String novoUltimoDiaAtivo = ultimoDiaAtivoString ?? '';
+
+    // Se a nova data da atividade é o dia atual mais recente
+    if (ultimoDiaAtivo == null || newDateTime.isAfter(ultimoDiaAtivo)) {
+      novoUltimoDiaAtivo = newDateStr;
+    } 
+    // Se a atividade original estava no último dia ativo, precisamos encontrar o novo último dia
+    else if (DateFormat('yyyy-MM-dd').format(ultimoDiaAtivo) == originalDateStr && 
+             otherActivitiesOnOriginalDayResponse == null) {
+      // Buscar a atividade mais recente para atualizar o último dia ativo
+      final recentActivityResponse = await Supabase.instance.client
+          .from('atividade')
+          .select('created_at')
+          .eq('grupo_id', widget.atividade['grupo_id'])
+          .eq('id_aluno', userId)
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (recentActivityResponse != null) {
+        final DateTime recentActivityDate =
+            DateTime.parse(recentActivityResponse['created_at']);
+        novoUltimoDiaAtivo = DateFormat('yyyy-MM-dd').format(recentActivityDate);
+      }
+    }
+
+    // Atualizar a sequência e o último dia ativo
+    await Supabase.instance.client
+        .from('grupo_usuarios')
+        .update({
+          'sequencia': novaSequencia,
+          'ultimo_dia_ativo': novoUltimoDiaAtivo,
+        })
+        .eq('grupo_id', widget.atividade['grupo_id'])
+        .eq('usuario_id', userId);
+
+    Navigator.pop(context, true);
+  } catch (e) {
+    setState(() => errorMessage = 'Erro ao atualizar atividade: ${e.toString()}');
+    print('Erro detalhado: $e');
   }
+}
 
   Future<void> _deleteActivity() async {
     try {
